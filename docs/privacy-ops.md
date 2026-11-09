@@ -6,9 +6,9 @@ legal review still needed).
 
 ## Personal data held
 
-`bookings.customer_name`, `bookings.phone`, `bookings.email`. Nothing else holds customer PII: `booking_changes`
-holds times only; `notifications` holds kinds/statuses, plus a provider `error` text that could echo a number,
-so erasure clears it. Owner accounts live in Supabase Auth and are not covered here.
+`bookings.customer_name`, `bookings.phone`, `bookings.email`. Also scrubbed on erasure/retention:
+`booking_changes.reason` (owner free text that may name the customer, set to NULL) and `notifications.error`
+(provider text that could echo a number). `booking_changes` times and `notifications` kinds/statuses stay. Owner accounts live in Supabase Auth and are not covered here.
 
 ## Erasure: "Delete my data" (customer booking page)
 
@@ -21,7 +21,14 @@ For EVERY booking with the same phone as the token's booking:
 - upcoming `pending`/`confirmed` bookings are cancelled with `cancelled_by = 'customer'`, so no shop-cancel
   notice is sent (and the placeholder phone is not E.164, so nothing could be sent anyway);
 - `cancel_token` is rotated, so every old manage link answers 404;
+- `booking_changes.reason` set to NULL for those bookings (migration 015);
 - the rows themselves stay, so the diary and takings stay correct.
+
+**Not erased:** copies already held by our processors. Sent SMS (body includes the manage link, recipient number)
+stay in Twilio's message logs (kept until deleted; Twilio redacts/deletes on request or via its API) and sent
+emails stay in Resend's logs (kept for a limited period per Resend's plan/retention settings). For a full erasure
+request, also delete the customer's messages in the Twilio console and Resend dashboard, and check each provider's
+current retention terms before launch (docs/launch-checklist.md).
 
 Returns `{"ok":true,"anonymised":n}`; an unknown token returns `{"ok":false,"reason":"not_found"}` and reveals nothing.
 
@@ -33,10 +40,25 @@ Requests by phone or email instead (no link): the owner can do the same in the S
 select anonymise_customer_by_token(cancel_token) from bookings where phone = '+447...' limit 1;
 ```
 
+## Stopping reminders (objection)
+
+`bookings.reminders_off` (migration 015). When true the notify job sends no `reminder_24h` / `reminder_2h` for
+that booking; the confirmation, change and shop-cancel notices still go (they are about the booking itself).
+- Customer: **Stop reminder messages** on `/booking/<token>` -> `set_reminders_off_by_token(p_token uuid)`
+  (SECURITY DEFINER, anon/authenticated, unknown token -> `not_found`). Per booking.
+- Owner, in the app: open the booking in the day view and press **Stop reminders** (toggle; press again to turn
+  them back on).
+- Owner, for every booking of one customer (e.g. they asked by phone):
+  ```sql
+  update bookings set reminders_off = true where phone = '+447...' and start_at > now();
+  ```
+  Bookings made later start with reminders on again; repeat if needed.
+
 ## Retention: 2 years
 
 `anonymise_old_bookings(p_older_than interval default '2 years')` anonymises (same fields, token rotated) every
-booking that ENDED more than the interval ago and is not anonymised yet; returns the count. Executable by the
+booking that ENDED more than the interval ago (any status) and is not anonymised yet, scrubbing its
+`booking_changes.reason` too; returns the count. Executable by the
 service role only (revoked from public, anon and authenticated). Keep the default in step with
 `shopConfig.privacy.retentionYears`, which the privacy notice shows.
 

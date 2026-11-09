@@ -9,12 +9,13 @@ vi.mock("@/lib/supabase/server", () => ({ createClient }));
 vi.mock("@/lib/booking", () => ({ createBooking }));
 vi.mock("next/cache", () => ({ refresh: vi.fn() }));
 
-const { addBooking, changeLength, setStatus } = await import("./bookings");
+const { addBooking, changeLength, setReminders, setStatus } = await import("./bookings");
 
 const id = "8f1c2a34-5b6d-4e7f-8a9b-0c1d2e3f4a5b";
 const calls = [
   ["setStatus", () => setStatus({ id, status: "done" })],
   ["changeLength", () => changeLength({ id, mode: "add", minutes: 10 })],
+  ["setReminders", () => setReminders({ id, off: true })],
   ["addBooking", () => addBooking({ serviceId: id, date: "2031-06-03", time: "15:00", name: "Walk", phone: "07700 900111" })],
 ] as const;
 

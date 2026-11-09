@@ -14,6 +14,7 @@ customer-typed text (e.g. the name) is ever put in a message.
 | `cancelled_by_shop` | `bookings.cancelled_by = 'shop'`; customer self-cancel (`'customer'`) sends nothing | SMS |
 
 Only `pending`/`confirmed` bookings that have not started get anything (plus the shop-cancel notice).
+No reminders when `bookings.reminders_off` is true (customer or owner opted out; see `docs/privacy-ops.md`).
 Times are shown in Europe/London, e.g. `Tue 4 Nov, 14:20`, with the manage link `SITE_URL/booking/<token>`.
 
 ## How it works

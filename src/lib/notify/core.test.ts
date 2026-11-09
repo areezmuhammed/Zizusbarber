@@ -11,7 +11,7 @@ function booking(over: Partial<Booking> = {}): Booking {
   return {
     id: "b1", status: "confirmed", start_at: "2026-11-20T14:20:00Z", end_at: "2026-11-20T14:50:00Z",
     created_at: "2026-11-01T10:00:00Z", phone: "+447700900123", email: "ann@example.com",
-    cancel_token: "11111111-2222-3333-4444-555555555555", cancelled_by: null,
+    cancel_token: "11111111-2222-3333-4444-555555555555", cancelled_by: null, reminders_off: false,
     service_name: "Hair Cut", changes: [], notifications: [], ...over,
   };
 }
@@ -25,6 +25,16 @@ describe("dueNotifications", () => {
     expect(kinds(dueNotifications([b], now))).toEqual(["confirmation:email"]);
     expect(kinds(dueNotifications([{ ...b, email: "" }], now))).toEqual(["confirmation:sms"]);
     expect(kinds(dueNotifications([b], new Date("2026-11-11T10:00:00Z")))).toEqual([]); // older than 24h
+  });
+
+  it("reminders_off: no reminders, but confirmation and change notices still go", () => {
+    const b = booking({ reminders_off: true });
+    expect(kinds(dueNotifications([b], at(b, 24 * H)))).toEqual([]);
+    expect(kinds(dueNotifications([b], at(b, H)))).toEqual([]);
+    const fresh = booking({ reminders_off: true, created_at: "2026-11-20T12:00:00Z" });
+    expect(kinds(dueNotifications([fresh], at(fresh, H)))).toEqual(["confirmation:email"]);
+    const moved = booking({ reminders_off: true, changes: [{ id: "c1", old_start: "", new_start: "", new_end: "", at: "2026-11-19T10:00:00Z" }] });
+    expect(kinds(dueNotifications([moved], at(moved, 24 * H)))).toEqual(["changed:sms"]);
   });
 
   it("24h reminder window [start-24h, start-2h) by SMS, exact to the minute", () => {

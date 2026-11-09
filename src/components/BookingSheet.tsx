@@ -219,9 +219,9 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
                 </div>
               ))}
               <p className="text-sm text-muted-foreground">
-                By booking you agree we use your name, phone and email only to manage your appointment; see{" "}
+                We use your name, phone and email only to manage your appointment. See our{" "}
                 <a href="/privacy" target="_blank" className="text-primary underline underline-offset-4">
-                  Privacy
+                  Privacy notice
                 </a>
                 .
               </p>

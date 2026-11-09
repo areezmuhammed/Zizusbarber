@@ -31,15 +31,15 @@ describe("buildSalonJsonLd", () => {
 });
 
 describe("redirects", () => {
-  it("are permanent, start with / and never shadow the real booking page", () => {
+  it("are 301s, start with / and never shadow the real booking page", () => {
     const list = redirects();
     expect(list.length).toBe(OLD_URLS.length);
     for (const r of list) {
-      expect(r).toEqual({ source: expect.stringMatching(/^\//), destination: expect.stringMatching(/^\//), permanent: true });
+      expect(r).toEqual({ source: expect.stringMatching(/^\//), destination: expect.stringMatching(/^\//), statusCode: 301 });
       expect(r.source).not.toBe("/book");
       expect(r.source).not.toMatch(/^\/booking\/:/);
     }
-    expect(list).toContainEqual({ source: "/gallery", destination: "/#gallery", permanent: true });
-    expect(list).toContainEqual({ source: "/booking", destination: "/book", permanent: true });
+    expect(list).toContainEqual({ source: "/gallery", destination: "/#gallery", statusCode: 301 });
+    expect(list).toContainEqual({ source: "/booking", destination: "/book", statusCode: 301 });
   });
 });

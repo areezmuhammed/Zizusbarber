@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDay, parseLength, parseStatus, parseWalkIn } from "./admin-form";
+import { parseDay, parseLength, parseReminders, parseStatus, parseWalkIn } from "./admin-form";
 
 const id = "8f1c2a34-5b6d-4e7f-8a9b-0c1d2e3f4a5b";
 
@@ -62,5 +62,15 @@ describe("parseDay", () => {
   it("accepts real dates only", () => {
     expect(parseDay("2031-06-03")).toBe("2031-06-03");
     for (const bad of ["2031-02-30", "today", undefined, ["2031-06-03"], "2031-6-3"]) expect(parseDay(bad)).toBeNull();
+  });
+});
+
+describe("parseReminders", () => {
+  it("accepts an id and a boolean", () => {
+    expect(parseReminders({ id, off: true })).toEqual({ id, off: true });
+    expect(parseReminders({ id, off: false })).toEqual({ id, off: false });
+  });
+  it("rejects anything else", () => {
+    for (const bad of [{ id, off: "true" }, { id }, { id: "x", off: true }, null, true]) expect(parseReminders(bad)).toBeNull();
   });
 });

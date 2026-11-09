@@ -4,7 +4,7 @@ import { addLondonDays, londonToUtc } from "./time";
 
 export type DayBooking = {
   id: string; name: string; phone: string; service: string; start: string; end: string;
-  status: "pending" | "confirmed" | "arrived" | "done" | "no_show";
+  status: "pending" | "confirmed" | "arrived" | "done" | "no_show"; remindersOff: boolean;
 };
 export type AdminService = { id: string; name: string; duration_min: number };
 
@@ -16,7 +16,7 @@ export async function getDay(date: string): Promise<{ bookings: DayBooking[]; se
   const [b, s] = await Promise.all([
     db
       .from("bookings")
-      .select("id,customer_name,phone,start_at,end_at,status,services(name)")
+      .select("id,customer_name,phone,start_at,end_at,status,reminders_off,services(name)")
       .gte("start_at", from.toISOString())
       .lt("start_at", addLondonDays(from, 1).toISOString())
       .neq("status", "cancelled")
@@ -27,7 +27,7 @@ export async function getDay(date: string): Promise<{ bookings: DayBooking[]; se
   if (s.error) throw new Error(s.error.message);
   return {
     bookings: b.data.map((r) => ({
-      id: r.id, name: r.customer_name, phone: r.phone, start: r.start_at, end: r.end_at, status: r.status,
+      id: r.id, name: r.customer_name, phone: r.phone, start: r.start_at, end: r.end_at, status: r.status, remindersOff: r.reminders_off,
       service: (r.services as unknown as { name: string } | null)?.name ?? "",
     })),
     services: s.data,

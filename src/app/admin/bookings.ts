@@ -3,7 +3,7 @@
 // Writes use the signed-in owner's client, so RLS (owner_all) and the RPCs' own is_owner() checks still apply.
 
 import { refresh } from "next/cache";
-import { parseLength, parseStatus, parseWalkIn } from "@/lib/admin-form";
+import { parseLength, parseReminders, parseStatus, parseWalkIn } from "@/lib/admin-form";
 import { NotOwnerError, requireOwner } from "@/lib/auth";
 import { createBooking } from "@/lib/booking";
 import { createClient } from "@/lib/supabase/server";
@@ -37,6 +37,19 @@ export async function setStatus(input: unknown): Promise<{ ok: true } | Fail> {
     .eq("id", args.id)
     .in("status", ACTIVE)
     .select("id");
+  if (error) return { error: "failed" };
+  if (!data.length) return { error: "not_found" };
+  refresh();
+  return { ok: true };
+}
+
+// reminders_off: no reminder messages for this booking (notify core); confirmation/change/cancel notices still go
+export async function setReminders(input: unknown): Promise<{ ok: true } | Fail> {
+  if (!(await isOwner())) return { error: "forbidden" };
+  const args = parseReminders(input);
+  if (!args) return { error: "invalid" };
+  const db = await createClient();
+  const { data, error } = await db.from("bookings").update({ reminders_off: args.off }).eq("id", args.id).select("id");
   if (error) return { error: "failed" };
   if (!data.length) return { error: "not_found" };
   refresh();

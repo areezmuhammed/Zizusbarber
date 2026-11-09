@@ -41,7 +41,9 @@ export default function PrivacyPage() {
         </li>
         <li>
           To send you reminders before your appointment. We do this because it is in our legitimate interests, and
-          yours, to keep appointments from being missed. Tell us if you would rather not get them.
+          yours, to keep appointments from being missed. Reminders are only ever about your booking. To stop them,
+          press <strong className="font-medium text-foreground">Stop reminder messages</strong> on your booking page, or
+          call or email us. We will still tell you if your booking changes or is cancelled.
         </li>
       </ul>
       <p>
@@ -75,7 +77,8 @@ export default function PrivacyPage() {
         <li>have wrong details corrected (rectification);</li>
         <li>have your details deleted (erasure);</li>
         <li>ask us to limit how we use them (restriction);</li>
-        <li>object to how we use them, including reminders (objection).</li>
+        <li>object to how we use them, including reminders (objection);</li>
+        <li>get your details in a common electronic format to take elsewhere (data portability).</li>
       </ul>
       <p>
         The quickest way to delete your details is the <strong className="font-medium text-foreground">Delete my data</strong>{" "}

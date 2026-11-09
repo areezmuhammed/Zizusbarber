@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { CancelBooking } from "@/components/CancelBooking";
 import { DeleteMyData } from "@/components/DeleteMyData";
+import { StopReminders } from "@/components/StopReminders";
 import { getBookingByToken } from "@/lib/customer-booking";
 import { formatPrice } from "@/lib/format";
 import { utcToLondon } from "@/lib/time";
@@ -59,6 +60,7 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
           >
             Add to calendar
           </a>
+          <StopReminders token={token} off={b.reminders_off} />
           <CancelBooking token={token} />
         </>
       )}

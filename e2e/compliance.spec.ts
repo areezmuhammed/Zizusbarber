@@ -56,17 +56,36 @@ test("Delete my data needs a confirm, then the link stops working", async ({ pag
   const b = await insert(new Date(Date.now() + 21 * day + Math.floor(Math.random() * 3600000)));
   await page.goto(`/booking/${a.cancel_token}`);
   await page.getByRole("button", { name: "Delete my data" }).click();
+  await expect(page.getByRole("button", { name: "Keep my data" })).toBeFocused();
   await page.getByRole("button", { name: "Keep my data" }).click();
+  await expect(page.getByRole("button", { name: "Delete my data" })).toBeFocused();
   await page.getByRole("button", { name: "Delete my data" }).click();
   const yes = page.getByRole("button", { name: "Yes, delete my data" });
   expect((await yes.boundingBox())!.height).toBeGreaterThanOrEqual(48);
   await yes.click();
-  await expect(page.getByText("Your details have been deleted.")).toBeVisible();
+  await expect(page.getByText("Your details have been deleted.")).toBeFocused();
 
   for (const t of [a.cancel_token, b.cancel_token]) expect((await page.goto(`/booking/${t}`))?.status()).toBe(404);
   const rows = await (await fetch(`${API}/rest/v1/bookings?select=customer_name,phone,email,status,cancelled_by&id=in.(${a.id},${b.id})`, { headers: admin })).json();
   expect(rows).toHaveLength(2);
   for (const r of rows) expect(r).toMatchObject({ customer_name: "Deleted customer", email: "", status: "cancelled", cancelled_by: "customer" });
+});
+
+test("Stop reminder messages turns reminders off for that booking", async ({ page }) => {
+  const a = await insert(new Date(Date.now() + 22 * 86400000 + Math.floor(Math.random() * 3600000)));
+  await page.goto(`/booking/${a.cancel_token}`);
+  await page.getByRole("button", { name: "Stop reminder messages" }).click();
+  await expect(page.getByText("Reminder messages are off for this booking.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Reminder messages are off for this booking.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Stop reminder messages" })).toHaveCount(0);
+  const [row] = await (await fetch(`${API}/rest/v1/bookings?select=reminders_off,status&id=eq.${a.id}`, { headers: admin })).json();
+  expect(row).toEqual({ reminders_off: true, status: "confirmed" });
+});
+
+test("public pages set no cookies", async ({ page, context }) => {
+  for (const p of ["/", "/book", "/privacy"]) await page.goto(p);
+  expect(await context.cookies()).toEqual([]);
 });
 
 test("booking form explains data use and links to privacy", async ({ page }) => {
@@ -78,13 +97,13 @@ test("booking form explains data use and links to privacy", async ({ page }) => 
     await page.getByRole("group", { name: "Days" }).getByRole("button").nth(1).click();
   }
   await page.getByRole("group", { name: "Available times" }).getByRole("button").first().click();
-  await expect(page.getByText("By booking you agree we use your name, phone and email only to manage your appointment")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Privacy" }).first()).toHaveAttribute("href", "/privacy");
+  await expect(page.getByText("We use your name, phone and email only to manage your appointment. See our Privacy notice.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Privacy notice" })).toHaveAttribute("href", "/privacy");
 });
 
 test("old site URLs redirect permanently", async ({ page, request }) => {
   const res = await request.get("/gallery", { maxRedirects: 0 });
-  expect([301, 308]).toContain(res.status());
+  expect(res.status()).toBe(301);
   expect(res.headers().location).toBe("/#gallery");
   expect((await request.get("/booking", { maxRedirects: 0 })).headers().location).toBe("/book");
   await page.goto("/gallery");

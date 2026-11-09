@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { changeLength, setStatus, type Affected, type LengthResult } from "@/app/admin/bookings";
+import { changeLength, setReminders, setStatus, type Affected, type LengthResult } from "@/app/admin/bookings";
 import type { DayBooking } from "@/lib/admin-data";
 import { STATUS_LABEL } from "./BookingRow";
 import { Sheet } from "./Sheet";
@@ -40,6 +40,7 @@ function Actions({ b, onClose }: { b: DayBooking; onClose: () => void }) {
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [length, setLength] = useState(String(Math.round((Date.parse(b.end) - Date.parse(b.start)) / 60_000)));
+  const [remindersOff, setRemindersOff] = useState(b.remindersOff);
   const active = b.status !== "done" && b.status !== "no_show";
 
   function status(s: "arrived" | "done" | "no_show" | "cancelled") {
@@ -48,6 +49,15 @@ function Actions({ b, onClose }: { b: DayBooking; onClose: () => void }) {
       const r = await setStatus({ id: b.id, status: s });
       if ("error" in r) setError(errorText(r.error));
       else onClose();
+    });
+  }
+
+  function reminders(off: boolean) {
+    setError("");
+    start(async () => {
+      const r = await setReminders({ id: b.id, off });
+      if ("error" in r) setError(errorText(r.error));
+      else setRemindersOff(off);
     });
   }
 
@@ -117,6 +127,23 @@ function Actions({ b, onClose }: { b: DayBooking; onClose: () => void }) {
             Not changed. These bookings would run past closing time, so move or cancel one first:{people(result.conflicts)}
           </div>
         )}
+      </section>
+
+      <section aria-label="Reminders" className="grid gap-2">
+        <button
+          type="button"
+          aria-pressed={remindersOff}
+          disabled={pending}
+          onClick={() => reminders(!remindersOff)}
+          className={`${btn} w-full border border-border aria-pressed:border-primary aria-pressed:text-primary`}
+        >
+          Stop reminders
+        </button>
+        <p className="text-sm text-muted-foreground">
+          {remindersOff
+            ? "Reminders are off for this booking. The customer still hears if it changes or is cancelled."
+            : "The customer gets reminder messages before this booking."}
+        </p>
       </section>
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

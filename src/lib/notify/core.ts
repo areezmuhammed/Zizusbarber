@@ -11,7 +11,7 @@ export type Sent = { kind: Kind; change_id: string | null; status: Status; attem
 export type Change = { id: string; old_start: string; new_start: string; new_end: string; at: string };
 export type Booking = {
   id: string; status: string; start_at: string; end_at: string; created_at: string;
-  phone: string; email: string; cancel_token: string; cancelled_by: string | null;
+  phone: string; email: string; cancel_token: string; cancelled_by: string | null; reminders_off: boolean;
   service_name: string; changes: Change[]; notifications: Sent[];
 };
 export type Due = { booking: Booking; kind: Kind; changeId: string | null; channel: Channel };
@@ -47,9 +47,10 @@ export function dueNotifications(rows: Booking[], now: Date): Due[] {
     const before = out.length;
     if (t - created < 24 * H) add("confirmation", pref);
     const confirmingNow = out.length > before;
-    if (start - 24 * H <= t && t < start - 2 * H && created < start - 24 * H) add("reminder_24h", "sms");
+    const remind = !b.reminders_off; // opted out (customer or owner): only messages about the booking itself
+    if (remind && start - 24 * H <= t && t < start - 2 * H && created < start - 24 * H) add("reminder_24h", "sms");
     // a confirmation in this run, or one sent at most ~30 min before the window opened, already covers the 2h reminder
-    if (start - 2 * H <= t && created < start - 2.5 * H && !confirmingNow) add("reminder_2h", pref);
+    if (remind && start - 2 * H <= t && created < start - 2.5 * H && !confirmingNow) add("reminder_2h", pref);
     const last = [...b.changes].sort((x, y) => Date.parse(x.at) - Date.parse(y.at)).at(-1);
     if (last) add("changed", "sms", last.id);
   }
@@ -167,7 +168,7 @@ export function supabaseNotifyDb(db: Client): NotifyDb {
       const { data, error } = await db
         .from("bookings")
         .select(
-          "id,status,start_at,end_at,created_at,phone,email,cancel_token,cancelled_by,services(name)," +
+          "id,status,start_at,end_at,created_at,phone,email,cancel_token,cancelled_by,reminders_off,services(name)," +
             "booking_changes(id,old_start,new_start,new_end,at),notifications(kind,change_id,status,attempts)",
         )
         .gt("start_at", now.toISOString())

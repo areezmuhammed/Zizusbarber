@@ -4,9 +4,9 @@ import { shopConfig } from "../../shop.config";
 export type BookingChange = { old_start: string; old_end: string; new_start: string; new_end: string; reason: string | null; at: string };
 export type CustomerBooking = {
   service_name: string; price_pence: number; duration_min: number;
-  start_at: string; end_at: string; status: string; first_name: string; changes: BookingChange[];
+  start_at: string; end_at: string; status: string; first_name: string; changes: BookingChange[]; reminders_off: boolean;
 };
-export type EraseResult = { ok: true; anonymised: number } | { ok: false; reason: "not_found" };
+export type EraseResult = { ok: true; anonymised: number } | { ok: false; reason: "not_found" | "failed" };
 export type CancelResult = { ok: true } | { ok: false; reason: "too_late" | "not_found" | "not_cancellable" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -38,6 +38,13 @@ export async function eraseCustomerByToken(token: string): Promise<EraseResult> 
   const { data, error } = await db().rpc("anonymise_customer_by_token", { p_token: token });
   if (error) throw new Error(error.message);
   return data as EraseResult;
+}
+
+export async function stopRemindersByToken(token: string): Promise<{ ok: boolean }> {
+  if (!isUuid(token)) return { ok: false };
+  const { data, error } = await db().rpc("set_reminders_off_by_token", { p_token: token });
+  if (error) throw new Error(error.message);
+  return data as { ok: boolean };
 }
 
 const icsDate = (iso: string) => new Date(iso).toISOString().replace(/[-:]|\.\d{3}/g, "");

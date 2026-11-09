@@ -1,32 +1,49 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { deleteMyData } from "@/app/booking/[token]/actions";
 import { shopConfig } from "../../shop.config";
 
 const btn =
   "flex min-h-12 w-full items-center justify-center rounded-full px-5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
-// Two-step erase: the first press only explains, the second deletes.
+type Step = "idle" | "confirm" | "done" | "failed";
+
+// Two-step erase: the first press only explains, the second deletes. Focus follows each step.
 export function DeleteMyData({ token }: { token: string }) {
-  const [step, setStep] = useState<"idle" | "confirm" | "done" | "failed">("idle");
+  const [step, setStep] = useState<Step>("idle");
   const [pending, start] = useTransition();
+  const focus = useRef<HTMLElement | null>(null);
+  const moved = useRef(false);
+
+  useEffect(() => {
+    if (moved.current) focus.current?.focus();
+    moved.current = true;
+  }, [step]);
 
   function erase() {
     start(async () => setStep((await deleteMyData(token)).ok ? "done" : "failed"));
   }
 
+  const ref = (el: HTMLElement | null) => {
+    focus.current = el;
+  };
+
   if (step === "done")
     return (
-      <p role="status" className="rounded-xl border border-border bg-card p-4 text-sm">
+      <p ref={ref} tabIndex={-1} role="status" className="rounded-xl border border-border bg-card p-4 text-sm outline-none">
         Your details have been deleted. Any upcoming appointments are cancelled and this link no longer works.
       </p>
     );
   if (step === "failed")
-    return <p role="alert" className="text-sm text-destructive">This link no longer works. Call {shopConfig.phone} for help.</p>;
+    return (
+      <p ref={ref} tabIndex={-1} role="alert" className="text-sm text-destructive outline-none">
+        Your details could not be deleted. Call {shopConfig.phone} and we will do it for you.
+      </p>
+    );
   if (step === "idle")
     return (
-      <button type="button" onClick={() => setStep("confirm")} className={`${btn} text-muted-foreground underline underline-offset-4`}>
+      <button ref={ref} type="button" onClick={() => setStep("confirm")} className={`${btn} text-muted-foreground underline underline-offset-4`}>
         Delete my data
       </button>
     );
@@ -39,7 +56,7 @@ export function DeleteMyData({ token }: { token: string }) {
       <button type="button" onClick={erase} disabled={pending} className={`${btn} bg-destructive text-white`}>
         {pending ? "Deleting…" : "Yes, delete my data"}
       </button>
-      <button type="button" onClick={() => setStep("idle")} disabled={pending} className={`${btn} border border-border`}>
+      <button ref={ref} type="button" onClick={() => setStep("idle")} disabled={pending} className={`${btn} border border-border`}>
         Keep my data
       </button>
     </div>

@@ -16,6 +16,12 @@ export function parseStatus(input: unknown) {
   return { id: o.id, status: o.status as OwnerStatus };
 }
 
+export function parseReminders(input: unknown) {
+  const o = obj(input);
+  if (!o || !isId(o.id) || typeof o.off !== "boolean") return null;
+  return { id: o.id, off: o.off };
+}
+
 // add = lengthen by minutes; set = make the booking this many minutes long
 export function parseLength(input: unknown) {
   const o = obj(input);

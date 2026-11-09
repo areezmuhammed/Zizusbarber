@@ -17,6 +17,8 @@ Remove it (`DRAFT` in `src/components/LegalPage.tsx`) only after:
       one-month reply deadline).
 - [ ] Update the "Last updated" dates on both pages when the text changes.
 - [ ] Retention (2 years) agreed with the owner; see `docs/privacy-ops.md`.
+- [ ] Check Twilio and Resend message-log retention and how to delete a customer's messages there (erasure does
+      not reach them); note it in `docs/privacy-ops.md` if it differs.
 
 ## Email and SMS (see docs/notifications.md)
 
