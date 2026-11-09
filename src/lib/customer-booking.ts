@@ -32,11 +32,27 @@ export async function cancelBookingByToken(token: string): Promise<CancelResult>
 }
 
 const icsDate = (iso: string) => new Date(iso).toISOString().replace(/[-:]|\.\d{3}/g, "");
-const esc = (s: string) => s.replace(/[\;,]/g, "\$&").replace(/\n/g, "\n");
+const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/[;,]/g, "\\$&").replace(/\r?\n/g, "\\n");
+
+// RFC 5545 3.1: lines over 75 octets are folded as CRLF + one space; split on code points, never inside a UTF-8 sequence.
+const fold = (line: string) => {
+  const enc = new TextEncoder();
+  const out: string[] = [];
+  let cur = "";
+  let len = 0;
+  for (const ch of line) {
+    const n = enc.encode(ch).length;
+    if (len + n > (out.length ? 74 : 75)) { out.push(cur); cur = ""; len = 0; } // continuation lines spend 1 octet on the space
+    cur += ch;
+    len += n;
+  }
+  out.push(cur);
+  return out.join("\r\n ");
+};
 
 // UTC "Z" times are unambiguous, so no VTIMEZONE block is needed.
 export function buildIcs(token: string, b: Pick<CustomerBooking, "service_name" | "start_at" | "end_at">): string {
-  return [
+  const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Zizus Barbers//Booking//EN",
@@ -51,6 +67,6 @@ export function buildIcs(token: string, b: Pick<CustomerBooking, "service_name" 
     `DESCRIPTION:${esc(`Booking at ${shopConfig.name}. Call ${shopConfig.phone} to change it.`)}`,
     "END:VEVENT",
     "END:VCALENDAR",
-    "",
-  ].join("\r\n");
+  ];
+  return lines.map(fold).join("\r\n") + "\r\n";
 }

@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(15);
 
 create temp table svc as select id from services where name = 'Hair Cut';
 insert into bookings (id, barber_id, service_id, customer_name, phone, email, start_at, end_at, status, cancel_token) values
@@ -10,6 +10,11 @@ insert into bookings (id, barber_id, service_id, customer_name, phone, email, st
   -- starts in 2 hours: inside the 24h cutoff
   ('00000000-0000-0000-0000-0000000009a3', '00000000-0000-0000-0000-000000000001', (select id from svc), 'Cy Late', '0702', 'c@x.test',
    now() + interval '2 hours', now() + interval '2 hours 30 minutes', 'confirmed', '00000000-0000-0000-0000-0000000009b3');
+insert into bookings (id, barber_id, service_id, customer_name, phone, email, start_at, end_at, status, cancel_token) values
+  ('00000000-0000-0000-0000-0000000009a4', '00000000-0000-0000-0000-000000000001', (select id from svc), 'Dee In', '0703', 'd@x.test',
+   now() + interval '24 hours 1 minute', now() + interval '24 hours 2 minutes', 'confirmed', '00000000-0000-0000-0000-0000000009b4'),
+  ('00000000-0000-0000-0000-0000000009a5', '00000000-0000-0000-0000-000000000001', (select id from svc), 'Eve Out', '0704', 'e@x.test',
+   now() + interval '23 hours 59 minutes', now() + interval '24 hours', 'confirmed', '00000000-0000-0000-0000-0000000009b5');
 insert into booking_changes (booking_id, old_start, old_end, new_start, new_end, reason)
 values ('00000000-0000-0000-0000-0000000009a1', '2030-01-01 09:40+00', '2030-01-01 10:10+00', '2030-01-01 10:00+00', '2030-01-01 10:30+00', 'push');
 
@@ -28,6 +33,8 @@ select is(cancel_booking_by_token('00000000-0000-0000-0000-0000000009b3'), '{"ok
 select is(cancel_booking_by_token('00000000-0000-0000-0000-0000000009b1'), '{"ok":true}'::jsonb, 'cancel before cutoff works');
 select is(cancel_booking_by_token('00000000-0000-0000-0000-0000000009b1'), '{"ok":false,"reason":"not_cancellable"}'::jsonb, 'cannot cancel twice');
 select is((select status from get_booking_by_token('00000000-0000-0000-0000-0000000009b1')), 'cancelled', 'status is cancelled');
+select is(cancel_booking_by_token('00000000-0000-0000-0000-0000000009b4'), '{"ok":true}'::jsonb, 'start at now()+24h+1min can be cancelled');
+select is(cancel_booking_by_token('00000000-0000-0000-0000-0000000009b5'), '{"ok":false,"reason":"too_late"}'::jsonb, 'start at now()+24h-1min is too late');
 select is((select count(*)::int from bookings), 0, 'anon cannot select bookings directly');
 reset role;
 select is((select status from bookings where id = '00000000-0000-0000-0000-0000000009a3'), 'confirmed', 'too-late booking untouched');
