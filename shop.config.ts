@@ -1,5 +1,7 @@
 export const shopConfig = {
   name: "Zizu's Barbers",
+  tagline: "Premium Euro-Afro Styling in Sheffield",
+  url: "https://zizusbarbers.com",
   address: "135 Upperthorpe Rd, Sheffield S6 3EB",
   phone: "07535 423544",
   timezone: "Europe/London" as const,
