@@ -18,7 +18,7 @@ export async function Gallery() {
               <li key={p.id} className="aspect-[4/5] overflow-hidden rounded-md bg-background">
                 {/* plain img: the Storage host differs per deployment, so next/image remotePatterns would need per-shop config */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt={p.alt} loading="lazy" className="size-full object-cover" />
+                <img src={p.url} alt={p.alt} loading="lazy" decoding="async" className="size-full object-cover" />
               </li>
             ))}
           </ul>

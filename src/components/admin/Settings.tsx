@@ -23,13 +23,13 @@ const label = "block text-sm text-muted-foreground";
 const h2 = "font-heading text-2xl";
 
 // One pending flag and one message per form; `invalid` gets the form's own hint.
-function useSave(invalid: string) {
+export function useSave(invalid: string) {
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const run = (p: () => Promise<SettingsResult>, okText: string, after?: () => void) =>
+  const run = (p: () => Promise<SettingsResult | { error: string }>, okText: string, after?: () => void) =>
     start(async () => {
       const r = await p();
-      if ("error" in r) return setMsg({ ok: false, text: r.error === "invalid" ? invalid : ERRORS[r.error] });
+      if ("error" in r) return setMsg({ ok: false, text: r.error === "invalid" ? invalid : (ERRORS[r.error] ?? ERRORS.failed) });
       setMsg({ ok: true, text: okText });
       after?.();
     });
@@ -144,7 +144,7 @@ function ServiceForm({ s }: { s?: SettingsService }) {
 }
 
 // Two-step delete: the first tap only asks; "Yes, delete" runs it, "Cancel" puts the first button back.
-function ConfirmDelete({ label, what, pending, onConfirm }: { label: string; what: string; pending: boolean; onConfirm: () => void }) {
+export function ConfirmDelete({ label, what, pending, onConfirm }: { label: string; what: string; pending: boolean; onConfirm: () => void }) {
   const [asking, setAsking] = useState(false);
   if (!asking)
     return (

@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { Closure } from "./booking-form";
 
 // Settings actions call updateTag(TAGS.x) after a write so the public pages show it on the next request.
-export const TAGS = { services: "services", hours: "hours", closures: "closures" } as const;
+export const TAGS = { services: "services", hours: "hours", closures: "closures", gallery: "gallery" } as const;
 
 export type Service = { id: string; name: string; price_pence: number; duration_min: number };
 export type Hours = { weekday: number; open_local: string; close_local: string };
@@ -48,6 +48,7 @@ export async function getHours(): Promise<Hours[]> {
 export async function getGallery(): Promise<Photo[]> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(TAGS.gallery);
   const client = db();
   const rows: { id: string; storage_path: string; alt: string }[] = must(
     await client.from("gallery").select("id,storage_path,alt").order("sort").order("created_at"),
