@@ -1,5 +1,9 @@
+import { DateTime } from "luxon";
+import { connection } from "next/server";
+import { Suspense } from "react";
 import { hhmm, intlPhone } from "@/lib/format";
-import { getHours } from "@/lib/shop-data";
+import { getClosures, getHours } from "@/lib/shop-data";
+import { utcToLondon } from "@/lib/time";
 import { shopConfig } from "../../shop.config";
 
 export const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -29,6 +33,9 @@ export async function Hours() {
           })}
         </dl>
         <p className="mt-3 text-sm text-muted-foreground">Times are UK local time.</p>
+        <Suspense>
+          <Closures />
+        </Suspense>
         <address className="mt-10 not-italic leading-relaxed">
           <span className="block font-heading text-2xl">{shopConfig.name}</span>
           <span className="block text-muted-foreground">{shopConfig.address}</span>
@@ -38,5 +45,30 @@ export async function Hours() {
         </address>
       </div>
     </section>
+  );
+}
+
+// Upcoming closures and special hours; "today" is per request, so this streams in after the static shell.
+async function Closures() {
+  await connection();
+  const closures = (await getClosures(utcToLondon(new Date()).toISODate()!)).slice(0, 6);
+  if (!closures.length) return null;
+  return (
+    <div className="mt-8">
+      <h3 className="font-heading text-2xl">Holidays and changes</h3>
+      <ul aria-label="Upcoming closures" className="mt-3">
+        {closures.map((c) => (
+          <li key={c.date} className="flex justify-between gap-4 border-b border-border py-3">
+            <span>
+              {DateTime.fromISO(c.date).setLocale("en-GB").toFormat("ccc d LLL")}
+              {c.reason && <span className="block text-sm text-muted-foreground">{c.reason}</span>}
+            </span>
+            <span className="font-mono text-sm">
+              {c.open_local && c.close_local ? `${hhmm(c.open_local)}–${hhmm(c.close_local)}` : "Closed"}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

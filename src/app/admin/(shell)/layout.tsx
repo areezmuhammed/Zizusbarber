@@ -2,7 +2,7 @@ import Link from "next/link";
 import { signOut } from "../actions";
 import { NotOwnerError, requireOwner } from "@/lib/auth";
 
-const nav: [string, string?][] = [["Today", "/admin"], ["Status", "/admin/status"], ["Settings"], ["Gallery"]];
+const nav: [string, string?][] = [["Today", "/admin"], ["Status", "/admin/status"], ["Settings", "/admin/settings"], ["Gallery"]];
 
 export default async function AdminShell({ children }: { children: React.ReactNode }) {
   let refused = false;

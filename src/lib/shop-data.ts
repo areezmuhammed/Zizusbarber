@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import type { Closure } from "./booking-form";
+
+// Settings actions call updateTag(TAGS.x) after a write so the public pages show it on the next request.
+export const TAGS = { services: "services", hours: "hours", closures: "closures" } as const;
 
 export type Service = { id: string; name: string; price_pence: number; duration_min: number };
 export type Hours = { weekday: number; open_local: string; close_local: string };
@@ -21,6 +24,7 @@ function must<T>(r: { data: T | null; error: { message: string } | null }): T {
 export async function getServices(): Promise<Service[]> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(TAGS.services);
   return must(
     await db().from("services").select("id,name,price_pence,duration_min").eq("active", true).order("sort"),
   );
@@ -30,6 +34,7 @@ export async function getServices(): Promise<Service[]> {
 export async function getHours(): Promise<Hours[]> {
   "use cache";
   cacheLife("minutes");
+  cacheTag(TAGS.hours);
   return must(
     await db()
       .from("opening_hours")
@@ -61,8 +66,9 @@ export async function getStatus(): Promise<Status | null> {
 }
 
 // Closures on or after a London date; `from` is the cache key, so the list rolls over daily.
-export async function getClosures(from: string): Promise<Closure[]> {
+export async function getClosures(from: string): Promise<(Closure & { reason: string | null })[]> {
   "use cache";
   cacheLife("minutes");
-  return must(await db().from("closures").select("date,open_local,close_local").gte("date", from));
+  cacheTag(TAGS.closures);
+  return must(await db().from("closures").select("date,reason,open_local,close_local").gte("date", from).order("date"));
 }

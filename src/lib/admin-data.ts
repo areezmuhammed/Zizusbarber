@@ -33,3 +33,24 @@ export async function getDay(date: string): Promise<{ bookings: DayBooking[]; se
     services: s.data,
   };
 }
+
+export type SettingsService = { id: string; name: string; price_pence: number; duration_min: number; active: boolean };
+export type SettingsHours = { weekday: number; open_local: string; close_local: string };
+export type SettingsClosure = { id: string; date: string; reason: string | null; open_local: string | null; close_local: string | null };
+
+// Everything the settings page edits: all services (hidden ones too), shop-wide hours, closures from `today`. Owner only.
+export async function getSettings(today: string) {
+  await requireOwner();
+  const db = await createClient();
+  const [s, h, c] = await Promise.all([
+    db.from("services").select("id,name,price_pence,duration_min,active").order("sort").order("name"),
+    db.from("opening_hours").select("weekday,open_local,close_local").is("barber_id", null),
+    db.from("closures").select("id,date,reason,open_local,close_local").gte("date", today).order("date"),
+  ]);
+  for (const r of [s, h, c]) if (r.error) throw new Error(r.error.message);
+  return {
+    services: s.data as SettingsService[],
+    hours: h.data as SettingsHours[],
+    closures: c.data as SettingsClosure[],
+  };
+}
