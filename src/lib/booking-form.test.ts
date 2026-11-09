@@ -61,8 +61,8 @@ describe("validateDetails", () => {
     }
   });
 
-  it("rejects too-short and lettered phones", () => {
-    for (const p of ["07700 9001", "07700 9001ab", "phone"]) {
+  it("rejects too-short and lettered phones, and national parts starting 0 or 4", () => {
+    for (const p of ["07700 9001", "07700 9001ab", "phone", "+44 0771234567", "+44 44 7700 9001", "00447700", "0447700900123"]) {
       expect(validateDetails({ name: "Sam", phone: p, email: "" }).phone).toBeTruthy();
       expect(normalisePhone(p)).toBeNull();
     }

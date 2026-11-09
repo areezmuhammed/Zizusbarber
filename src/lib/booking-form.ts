@@ -30,14 +30,15 @@ export function openDays(now: Date, count: number, hours: HoursRow[], closures: 
 export type Details = { name: string; phone: string; email: string };
 
 // UK number as +44 plus 9-10 digits, or null. Accepts 07…, 447…, +44 7…, 0044 7… and "+44 (0)7…",
-// with spaces, brackets, hyphens and dots.
+// with spaces, brackets, hyphens and dots. UK national numbers start 1, 2, 3, 5, 7, 8 or 9 after the 0/44
+// prefix, so "+44 0…" (doubled trunk zero) and "+44 44…" (doubled country code) are rejected.
 export function normalisePhone(raw: string): string | null {
   const s = raw
     .trim()
     .replace(/^(\+?44|0044)\s*\(0\)/, "$1")
     .replace(/[\s().-]/g, "")
     .replace(/^(?:\+44|0044)/, "44");
-  if (!/^(?:0|44)\d{9,10}$/.test(s)) return null;
+  if (!/^(?:0|44)[1235789]\d{8,9}$/.test(s)) return null;
   return `+44${s.replace(/^(?:0|44)/, "")}`;
 }
 
@@ -55,7 +56,7 @@ export function validateDetails(d: Details): Partial<Record<keyof Details, strin
   return e;
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 
 // Trust boundary for the book action: anything malformed becomes null, never an exception.
