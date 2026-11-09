@@ -22,7 +22,8 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
   const { token } = await params;
   const b = await getBookingByToken(token);
   if (!b) notFound();
-  const change = b.changes.at(-1);
+  // only start-time moves; a length-only change (extend_booking's row for its own target) is not a "move"
+  const change = b.changes.filter((c) => Date.parse(c.new_start) !== Date.parse(c.old_start)).at(-1);
   const cancellable = b.status === "confirmed" || b.status === "pending";
 
   return (
