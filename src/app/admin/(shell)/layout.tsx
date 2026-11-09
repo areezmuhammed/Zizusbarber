@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { signOut } from "../actions";
 import { NotOwnerError, requireOwner } from "@/lib/auth";
 
-const nav = ["Today", "Status", "Settings", "Gallery"];
+const nav: [string, string?][] = [["Today", "/admin"], ["Status", "/admin/status"], ["Settings"], ["Gallery"]];
 
 export default async function AdminShell({ children }: { children: React.ReactNode }) {
   let refused = false;
@@ -26,9 +27,13 @@ export default async function AdminShell({ children }: { children: React.ReactNo
   return (
     <div className="mx-auto min-h-screen max-w-2xl">
       <nav aria-label="Admin" className="flex flex-wrap items-center gap-2 border-b p-3">
-        {nav.map((n) => (
-          <span key={n} className="rounded px-3 py-2 text-sm">{n}</span>
-        ))}
+        {nav.map(([n, href]) =>
+          href ? (
+            <Link key={n} href={href} className="rounded px-3 py-2 text-sm">{n}</Link>
+          ) : (
+            <span key={n} className="rounded px-3 py-2 text-sm">{n}</span>
+          ),
+        )}
         <form action={signOut} className="ml-auto">
           <button className="rounded border px-3 py-2 text-sm">Sign out</button>
         </form>
