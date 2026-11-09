@@ -18,7 +18,11 @@ describe("parseSetStatus", () => {
     expect(parseSetStatus({ state: "open", note: "   " })).toEqual({ state: "open", note: null });
     expect(parseSetStatus({ state: "open", note: "x".repeat(80) })?.note).toHaveLength(80);
   });
-  it.each([null, {}, { state: "shut", note: "" }, { state: "open" }, { state: "open", note: 5 }, { state: "open", note: "x".repeat(81) }])(
+  it("accepts a state alone or a note alone, and only sets the keys given", () => {
+    expect(parseSetStatus({ state: "busy" })).toEqual({ state: "busy" });
+    expect(parseSetStatus({ note: " hi " })).toEqual({ note: "hi" });
+  });
+  it.each([null, {}, { state: "shut", note: "" }, { state: "open", note: 5 }, { state: "open", note: "x".repeat(81) }])(
     "rejects %j",
     (v) => expect(parseSetStatus(v)).toBeNull(),
   );

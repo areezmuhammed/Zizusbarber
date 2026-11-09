@@ -31,8 +31,8 @@ export function StatusControls({ initial }: { initial: Status }) {
   }
   // buttons stay enabled while a request is pending: every tap is its own delta in SQL
   const bump = (key: "in_shop" | "waiting", delta: 1 | -1) => run(bumpCount({ field: key, delta }));
-  // a state tap re-saves the stored note, never unsaved draft text; "Save note" saves the draft
-  const save = (state: Status["state"], n: string) => run(saveStatus({ state, note: n }));
+  // a state tap sends only the state, "Save note" only the note: neither can overwrite the other with a stale copy
+  const saveState = (state: Status["state"]) => run(saveStatus({ state }));
 
   return (
     <div className="grid gap-6">
@@ -44,7 +44,7 @@ export function StatusControls({ initial }: { initial: Status }) {
             key={v}
             className={`${btn} border has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${s.state === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}
           >
-            <input type="radio" name="state" value={v} checked={s.state === v} onChange={() => save(v, s.note ?? "")} className="sr-only" />
+            <input type="radio" name="state" value={v} checked={s.state === v} onChange={() => saveState(v)} className="sr-only" />
             {label}
           </label>
         ))}
@@ -68,7 +68,7 @@ export function StatusControls({ initial }: { initial: Status }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void save(s.state, note);
+          void run(saveStatus({ note }));
         }}
       >
         <label className="block text-sm text-muted-foreground">
