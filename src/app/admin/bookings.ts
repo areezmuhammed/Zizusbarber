@@ -32,7 +32,8 @@ export async function setStatus(input: unknown): Promise<{ ok: true } | Fail> {
   // only active bookings change; a cancelled or finished one is never revived (it could overlap a newer booking)
   const { data, error } = await db
     .from("bookings")
-    .update({ status: args.status })
+    // cancelled_by 'shop' makes the "we had to cancel" notice due (customer self-cancel sets 'customer')
+    .update(args.status === "cancelled" ? { status: args.status, cancelled_by: "shop" } : { status: args.status })
     .eq("id", args.id)
     .in("status", ACTIVE)
     .select("id");

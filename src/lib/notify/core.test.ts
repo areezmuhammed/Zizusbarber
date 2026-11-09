@@ -50,6 +50,15 @@ describe("dueNotifications", () => {
     expect(kinds(dueNotifications([confirmed], at(b, H)))).toEqual(["reminder_2h:email"]);
   });
 
+  it("a confirmation covers the 2h reminder: booked < 2h30 before start, or both due in the same run", () => {
+    const b = booking({ created_at: "2026-11-20T12:16:00Z" }); // 2h04 before 14:20
+    expect(kinds(dueNotifications([b], new Date("2026-11-20T12:17:00Z")))).toEqual(["confirmation:email"]);
+    const confirmed = { ...b, notifications: [{ kind: "confirmation" as const, change_id: null, status: "sent" as const, attempts: 1 }] };
+    expect(kinds(dueNotifications([confirmed], at(b, H)))).toEqual([]);
+    const late = booking({ created_at: "2026-11-20T11:00:00Z" }); // 3h20 before; cron down until 1h before start
+    expect(kinds(dueNotifications([late], at(late, H)))).toEqual(["confirmation:email"]);
+  });
+
   it("DST end day: 09:30 London on Mon 26 Oct 2026 (GMT) -> 24h reminder at 09:30Z Sun 25 Oct", () => {
     const b = booking({ start_at: "2026-10-26T09:30:00Z", created_at: "2026-10-01T00:00:00Z" });
     expect(londonTime(b.start_at)).toBe("Mon 26 Oct, 09:30");

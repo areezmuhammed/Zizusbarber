@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { consoleEmail, consoleSms, providersFromEnv, resendEmail, twilioSms } from "./providers";
+import { consoleEmail, consoleSms, missingProviderEnv, providersFromEnv, resendEmail, twilioSms } from "./providers";
 
 // Fake fetch only: no request ever leaves the machine.
 const fake = (status = 200) => vi.fn<typeof fetch>(async () => new Response("err body", { status }));
@@ -25,6 +25,26 @@ it("Twilio: form POST to the account's Messages with basic auth", async () => {
 it("a non-2xx response throws so the row is marked failed", async () => {
   await expect(resendEmail("k", "f", fake(500)).send({ to: "a", subject: "b", text: "c" })).rejects.toThrow("resend 500: err body");
   await expect(twilioSms("s", "t", "f", fake(400)).send({ to: "a", text: "b" })).rejects.toThrow("twilio 400");
+});
+
+it("console providers never log the manage token or a full phone/email", async () => {
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const text = "Manage: https://zizusbarbers.com/booking/11c374c0-bbd1-4e8b-945b-6d9afdb5ff55 ok";
+  await consoleSms.send({ to: "+447700900123", text });
+  await consoleEmail.send({ to: "ann.smith@example.com", subject: "S", text });
+  const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+  log.mockRestore();
+  expect(out).not.toMatch(/11c374c0|7700900|ann\.smith/);
+  expect(out).toContain("/booking/<token> ok");
+  expect(out).toContain("to=***123");
+  expect(out).toContain("to=***@example.com");
+});
+
+it("missingProviderEnv lists every unset or blank required variable", () => {
+  const full = { SITE_URL: "u", RESEND_API_KEY: "k", EMAIL_FROM: "f", TWILIO_ACCOUNT_SID: "s", TWILIO_AUTH_TOKEN: "t", TWILIO_FROM: "+44" };
+  expect(missingProviderEnv(full)).toEqual([]);
+  expect(missingProviderEnv({ ...full, TWILIO_AUTH_TOKEN: " ", EMAIL_FROM: undefined })).toEqual(["EMAIL_FROM", "TWILIO_AUTH_TOKEN"]);
+  expect(missingProviderEnv({})).toHaveLength(6);
 });
 
 it("falls back to console (dry run) when env is missing", () => {

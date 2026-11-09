@@ -23,7 +23,8 @@ const H = 3_600_000;
 // All decisions are on UTC instants, so they are right across clock changes; only the text shows London time.
 // confirmation: within 24h of creation, email (SMS if no email).
 // reminder_24h: [start-24h, start-2h), SMS. reminder_2h: [start-2h, start), email (SMS if no email).
-// A reminder is only due if the booking existed before its window opened (a late booking gets just the confirmation).
+// A reminder is only due if the booking existed before its window opened (a late booking gets just the confirmation);
+// for the 2h reminder, 30 min before it opened, and never in the same run as the confirmation.
 // changed: the latest booking_changes row not yet notified, SMS. cancelled_by_shop: SMS. Nothing once start has passed.
 export function dueNotifications(rows: Booking[], now: Date): Due[] {
   const t = now.getTime();
@@ -43,9 +44,12 @@ export function dueNotifications(rows: Booking[], now: Date): Due[] {
       continue;
     }
     if (b.status !== "confirmed" && b.status !== "pending") continue;
+    const before = out.length;
     if (t - created < 24 * H) add("confirmation", pref);
+    const confirmingNow = out.length > before;
     if (start - 24 * H <= t && t < start - 2 * H && created < start - 24 * H) add("reminder_24h", "sms");
-    if (start - 2 * H <= t && created < start - 2 * H) add("reminder_2h", pref);
+    // a confirmation in this run, or one sent at most ~30 min before the window opened, already covers the 2h reminder
+    if (start - 2 * H <= t && created < start - 2.5 * H && !confirmingNow) add("reminder_2h", pref);
     const last = [...b.changes].sort((x, y) => Date.parse(x.at) - Date.parse(y.at)).at(-1);
     if (last) add("changed", "sms", last.id);
   }

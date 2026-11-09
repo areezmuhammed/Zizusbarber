@@ -43,18 +43,21 @@ describe.skipIf(!up)("runNotifications (local stack, fake providers)", () => {
       booking_id: a.id, old_start: A, old_end: "2031-01-14T11:30:00Z", new_start: moved.start, new_end: moved.end, reason: "test",
     });
     expect(e1).toBeNull();
-    await admin.from("bookings").update({ status: "cancelled", cancelled_by: "shop" }).eq("id", b.id); // as admin setStatus would
+    await admin.from("bookings").update({ status: "cancelled", cancelled_by: "shop" }).eq("id", b.id); // as admin setStatus does
 
     const mails: { to: string; subject: string; text: string }[] = [];
     const texts: { to: string; text: string }[] = [];
+    // scoped to this test's bookings: other bookings in the local DB are never touched
+    const real = supabaseNotifyDb(admin);
+    const db = { ...real, candidates: async (now: Date) => (await real.candidates(now)).filter((x) => x.id === a.id || x.id === b.id) };
     const run = () => runNotifications({
-      db: supabaseNotifyDb(admin), now: new Date(), shop,
+      db, now: new Date(), shop,
       email: { send: async (m) => { mails.push(m); } },
       sms: { send: async (m) => { texts.push(m); } },
     });
     await run();
 
-    const ours = { mails: mails.filter((m) => m.to === MAIL), texts: texts.filter((m) => m.to === PHONE) };
+    const ours = { mails, texts };
     expect(ours.mails).toHaveLength(1);
     expect(ours.mails[0].subject).toBe("Booking confirmed: Tue 14 Jan, 11:20");
     expect(ours.mails[0].text).toContain(`http://localhost:3000/booking/${a.cancel_token}`);
@@ -69,9 +72,8 @@ describe.skipIf(!up)("runNotifications (local stack, fake providers)", () => {
     ]);
     expect(rows!.every((r) => r.sent_at)).toBe(true);
 
-    const before = mails.length + texts.length;
-    await run();
-    expect(mails.filter((m) => m.to === MAIL).length + texts.filter((m) => m.to === PHONE).length).toBe(3);
-    expect(mails.length + texts.length).toBe(before); // nothing else was due either
+    expect(mails.length + texts.length).toBe(3);
+    expect(await run()).toEqual({ sent: 0, failed: 0, skipped: 0 });
+    expect(mails.length + texts.length).toBe(3);
   });
 });

@@ -33,14 +33,22 @@ export const twilioSms = (sid: string, token: string, from: string, f: Fetch = f
   },
 });
 
+// Logs never hold the manage-link token (a bearer credential) or a full phone/email.
+export const redact = (s: string) => s.replace(/\/booking\/[0-9a-f-]{36}/gi, "/booking/<token>");
+export const maskTo = (to: string) => (to.includes("@") ? `***${to.slice(to.indexOf("@"))}` : `***${to.slice(-3)}`);
+
 export const consoleEmail = {
   dryRun: true,
-  async send(m: Mail) { console.log(`[notify:email] to=${m.to} subject=${m.subject}\n${m.text}`); },
+  async send(m: Mail) { console.log(`[notify:email] to=${maskTo(m.to)} subject=${m.subject}\n${redact(m.text)}`); },
 };
 export const consoleSms = {
   dryRun: true,
-  async send(m: Text) { console.log(`[notify:sms] to=${m.to} ${m.text}`); },
+  async send(m: Text) { console.log(`[notify:sms] to=${maskTo(m.to)} ${redact(m.text)}`); },
 };
+
+const REQUIRED = ["SITE_URL", "RESEND_API_KEY", "EMAIL_FROM", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_FROM"];
+// Production (Edge Function) fails closed on any of these missing, before claiming a single row.
+export const missingProviderEnv = (env: Env) => REQUIRED.filter((k) => !env[k]?.trim());
 
 export function providersFromEnv(env: Env) {
   const email = env.RESEND_API_KEY && env.EMAIL_FROM ? resendEmail(env.RESEND_API_KEY, env.EMAIL_FROM) : consoleEmail;

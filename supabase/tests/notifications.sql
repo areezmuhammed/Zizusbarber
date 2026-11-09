@@ -1,5 +1,5 @@
 begin;
-select plan(20);
+select plan(23);
 
 insert into auth.users (id) values
   ('00000000-0000-0000-0000-0000000000c1'), ('00000000-0000-0000-0000-0000000000c2');
@@ -12,7 +12,8 @@ from (values
   ('00000000-0000-0000-0000-00000000aa01', 'N1', '2030-01-01 10:00+00', '2030-01-01 10:20+00', '00000000-0000-0000-0000-00000000bb01'),
   ('00000000-0000-0000-0000-00000000aa02', 'N2', '2030-01-01 10:20+00', '2030-01-01 10:50+00', '00000000-0000-0000-0000-00000000bb02'),
   ('00000000-0000-0000-0000-00000000aa03', 'N3', '2030-01-02 10:00+00', '2030-01-02 10:30+00', '00000000-0000-0000-0000-00000000bb03'),
-  ('00000000-0000-0000-0000-00000000aa04', 'N4', '2030-01-02 11:00+00', '2030-01-02 11:30+00', '00000000-0000-0000-0000-00000000bb04')
+  ('00000000-0000-0000-0000-00000000aa04', 'N4', '2030-01-02 11:00+00', '2030-01-02 11:30+00', '00000000-0000-0000-0000-00000000bb04'),
+  ('00000000-0000-0000-0000-00000000aa05', 'N5', '2030-01-02 12:00+00', '2030-01-02 12:30+00', '00000000-0000-0000-0000-00000000bb05')
 ) v(id, n, s, e, t);
 
 -- claim / idempotency (service role)
@@ -61,15 +62,24 @@ select is((select row(old_start, old_end, new_start, new_end, reason)::text from
   'target end change logged in booking_changes');
 select is((select count(*)::int from booking_changes where booking_id = '00000000-0000-0000-0000-00000000aa02'), 1, 'moved booking logged once');
 
--- owner cancel (admin setStatus: plain RLS update) is distinguishable from customer self-cancel
-update bookings set status = 'cancelled' where id = '00000000-0000-0000-0000-00000000aa03';
-select is((select cancelled_by from bookings where id = '00000000-0000-0000-0000-00000000aa03'), 'shop', 'owner cancel -> cancelled_by shop');
+-- who cancelled is explicit per path
+-- owner path (admin setStatus sends cancelled_by 'shop' in the same update)
+update bookings set status = 'cancelled', cancelled_by = 'shop' where id = '00000000-0000-0000-0000-00000000aa03';
+select is((select cancelled_by from bookings where id = '00000000-0000-0000-0000-00000000aa03'), 'shop', 'owner path -> shop');
+-- owner signed in but cancelling through the customer's manage link -> still the customer
+select is(cancel_booking_by_token('00000000-0000-0000-0000-00000000bb04'), '{"ok": true}'::jsonb, 'owner session uses the token path');
+select is((select cancelled_by from bookings where id = '00000000-0000-0000-0000-00000000aa04'), 'customer', 'token path with owner session -> customer');
 reset role;
 select set_config('request.jwt.claims', '', true);
 set local role anon;
-select is(cancel_booking_by_token('00000000-0000-0000-0000-00000000bb04'), '{"ok": true}'::jsonb, 'customer self-cancels');
+select is(cancel_booking_by_token('00000000-0000-0000-0000-00000000bb05'), '{"ok": true}'::jsonb, 'customer self-cancels');
 reset role;
-select is((select cancelled_by from bookings where id = '00000000-0000-0000-0000-00000000aa04'), 'customer', 'self-cancel -> cancelled_by customer');
+select is((select cancelled_by from bookings where id = '00000000-0000-0000-0000-00000000aa05'), 'customer', 'self-cancel -> customer');
+-- service role / dashboard cancel without the column -> fallback 'shop' so the customer is told
+set local role service_role;
+update bookings set status = 'cancelled' where id = '00000000-0000-0000-0000-00000000aa02';
+reset role;
+select is((select cancelled_by from bookings where id = '00000000-0000-0000-0000-00000000aa02'), 'shop', 'service-role default -> shop');
 
 select * from finish();
 rollback;
