@@ -5,6 +5,8 @@ import { startLive } from "@/lib/live-status";
 import type { Status } from "@/lib/shop-data";
 import { createClient } from "@/lib/supabase/client";
 
+let channels = 0; // unique topic per subscribe: realtime-js returns an existing same-topic channel, even one still leaving
+
 const LABEL = { open: "Open", busy: "Busy", closed: "Closed" } as const;
 const DOT = { open: "bg-primary", busy: "bg-[#D98E3A]", closed: "bg-muted-foreground" } as const;
 
@@ -18,8 +20,9 @@ export function LiveStatus({ initial }: { initial: Status }) {
       onStatus: setS,
       fetchRow: async () => (await db.from("shop_status").select("state,in_shop,waiting,note").maybeSingle()).data,
       subscribe: (onRow, onState) => {
+        const name = `shop_status_live_${++channels}`;
         const ch = db
-          .channel("shop_status_live")
+          .channel(name)
           .on("postgres_changes", { event: "*", schema: "public", table: "shop_status" }, (p) => onRow(p.new))
           .subscribe((st) => onState(st === "SUBSCRIBED"));
         return () => void db.removeChannel(ch);

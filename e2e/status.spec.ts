@@ -30,6 +30,15 @@ test("owner +1 in shop shows on an already-open public page without reload", asy
   const owner = await signedIn(browser, "statusown", true);
   await owner.goto("/admin/status");
   await expect(owner.getByTestId("count-in_shop")).toHaveText("0");
+  for (const n of ["Today", "Status"]) {
+    expect((await owner.getByRole("link", { name: n }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  }
+  // arrow keys move between states (native radios)
+  await owner.getByRole("radio", { name: "Open" }).focus();
+  await owner.keyboard.press("ArrowRight");
+  await expect(owner.getByRole("radio", { name: "Busy" })).toBeChecked();
+  await expect.poll(async () => (await getRow()).state).toBe("busy");
+  await owner.getByText("Open", { exact: true }).first().click();
   // a 48px+ target
   const plus = owner.getByRole("button", { name: "In shop plus one" });
   expect((await plus.boundingBox())!.height).toBeGreaterThanOrEqual(48);
@@ -45,12 +54,16 @@ test("owner +1 in shop shows on an already-open public page without reload", asy
   expect((await getRow()).waiting).toBe(0);
 
   // state + note
-  await owner.getByRole("radio", { name: "Busy" }).click();
+  await owner.getByText("Busy", { exact: true }).click();
   await owner.getByLabel("Note (optional)").fill("Back at 3");
+  await owner.getByText("Open", { exact: true }).first().click(); // a state tap must not save the unsaved draft
+  await expect(owner.getByRole("radio", { name: "Open" })).toBeChecked();
+  expect((await getRow()).note).toBeNull();
+  await owner.getByText("Busy", { exact: true }).click();
   await owner.getByRole("button", { name: "Save note" }).click();
   await expect(badge).toContainText("Busy", { timeout: 10_000 });
   await expect(badge).toContainText("Back at 3");
-  await owner.getByRole("radio", { name: "Closed" }).click();
+  await owner.getByText("Closed", { exact: true }).click();
   await expect(badge).not.toContainText("in shop", { timeout: 10_000 });
   await owner.context().close();
 });

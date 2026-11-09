@@ -15,8 +15,8 @@ export function toStatus(v: unknown): Status | null {
 }
 
 export type LiveDeps = {
-  /** Opens a realtime subscription; reports each channel state (true = subscribed). Returns the teardown. */
-  subscribe: (onRow: (row: unknown) => void, onState: (subscribed: boolean) => void) => () => void;
+  /** Opens a realtime subscription (`id` is unique per call, for a unique channel name); reports each channel state (true = subscribed). Returns the teardown. */
+  subscribe: (onRow: (row: unknown) => void, onState: (subscribed: boolean) => void, id: number) => () => void;
   fetchRow: () => Promise<unknown>;
   onStatus: (s: Status) => void;
   pollMs?: number;
@@ -37,26 +37,34 @@ export function startLive(d: LiveDeps) {
     if (s && !stopped) d.onStatus(s);
   };
   const refetch = () => d.fetchRow().then(push, () => {});
+  // Every connection has a generation; callbacks from a superseded or stopped one are ignored.
+  let gen = 0;
   const connect = () => {
     unsub?.();
-    unsub = d.subscribe(push, (ok) => {
-      if (stopped) return;
-      if (ok) {
-        if (timer !== null) clearI(timer);
-        timer = null;
-        void refetch(); // closes the gap since the (cached) server render
-      } else if (timer === null) {
-        void refetch();
-        timer = setI(() => {
+    const g = ++gen;
+    unsub = d.subscribe(
+      (r) => g === gen && push(r),
+      (ok) => {
+        if (stopped || g !== gen) return;
+        if (ok) {
+          if (timer !== null) clearI(timer);
+          timer = null;
+          void refetch(); // closes the gap since the (cached) server render
+        } else if (timer === null) {
           void refetch();
-          connect();
-        }, d.pollMs ?? POLL_MS);
-      }
-    });
+          timer = setI(() => {
+            void refetch();
+            connect();
+          }, d.pollMs ?? POLL_MS);
+        }
+      },
+      g,
+    );
   };
   connect();
   return () => {
     stopped = true;
+    gen++;
     if (timer !== null) clearI(timer);
     unsub?.();
   };

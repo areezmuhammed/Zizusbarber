@@ -29,13 +29,13 @@ export default async function AdminShell({ children }: { children: React.ReactNo
       <nav aria-label="Admin" className="flex flex-wrap items-center gap-2 border-b p-3">
         {nav.map(([n, href]) =>
           href ? (
-            <Link key={n} href={href} className="rounded px-3 py-2 text-sm">{n}</Link>
+            <Link key={n} href={href} className="inline-flex min-h-12 items-center rounded px-3 text-sm">{n}</Link>
           ) : (
-            <span key={n} className="rounded px-3 py-2 text-sm">{n}</span>
+            <span key={n} className="inline-flex min-h-12 items-center rounded px-3 text-sm">{n}</span>
           ),
         )}
         <form action={signOut} className="ml-auto">
-          <button className="rounded border px-3 py-2 text-sm">Sign out</button>
+          <button className="min-h-12 rounded border px-3 text-sm">Sign out</button>
         </form>
       </nav>
       <div className="p-4">{children}</div>

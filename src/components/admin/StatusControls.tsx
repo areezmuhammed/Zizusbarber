@@ -31,25 +31,24 @@ export function StatusControls({ initial }: { initial: Status }) {
   }
   // buttons stay enabled while a request is pending: every tap is its own delta in SQL
   const bump = (key: "in_shop" | "waiting", delta: 1 | -1) => run(bumpCount({ field: key, delta }));
-  const save = (state: Status["state"]) => run(saveStatus({ state, note }));
+  // a state tap re-saves the stored note, never unsaved draft text; "Save note" saves the draft
+  const save = (state: Status["state"], n: string) => run(saveStatus({ state, note: n }));
 
   return (
     <div className="grid gap-6">
       <h1 className="font-heading text-3xl leading-tight">Shop status</h1>
-      <div role="radiogroup" aria-label="Shop state" className="grid grid-cols-3 gap-2">
+      <fieldset className="grid grid-cols-3 gap-2">
+        <legend className="sr-only">Shop state</legend>
         {STATES.map(([v, label]) => (
-          <button
+          <label
             key={v}
-            type="button"
-            role="radio"
-            aria-checked={s.state === v}
-            onClick={() => save(v)}
-            className={`${btn} border ${s.state === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}
+            className={`${btn} border has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${s.state === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}
           >
+            <input type="radio" name="state" value={v} checked={s.state === v} onChange={() => save(v, s.note ?? "")} className="sr-only" />
             {label}
-          </button>
+          </label>
         ))}
-      </div>
+      </fieldset>
       {COUNTERS.map(([key, label]) => (
         <div key={key} className="flex items-center justify-between gap-3">
           <span id={`c-${key}`} className="text-lg">{label}</span>
@@ -69,7 +68,7 @@ export function StatusControls({ initial }: { initial: Status }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void save(s.state);
+          void save(s.state, note);
         }}
       >
         <label className="block text-sm text-muted-foreground">
