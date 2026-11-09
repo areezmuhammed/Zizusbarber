@@ -40,8 +40,20 @@ describe("generateSlots", () => {
     const s = hhmm(generateSlots({ ...base, date: "2026-03-29", openLocal: "00:00", closeLocal: "04:00" }));
     expect(s).toEqual(["00:00", "00:30", "02:00", "02:30", "03:00", "03:30"]);
   });
-  it("25 Oct 2026 has no duplicate instants", () => {
+  it("25 Oct 2026 yields 8 strictly increasing instants", () => {
     const ds = generateSlots({ ...base, date: "2026-10-25", openLocal: "00:00", closeLocal: "04:00" });
-    expect(new Set(ds.map((d) => d.getTime())).size).toBe(ds.length);
+    expect(ds).toHaveLength(8);
+    for (let i = 1; i < ds.length; i++) expect(ds[i].getTime()).toBeGreaterThan(ds[i - 1].getTime());
+    // 01:00 and 01:30 resolve to the GMT occurrence, so there is a 90 min gap after 00:30 BST (expected).
+    expect(ds.map((d) => d.toISOString())).toEqual([
+      "2026-10-24T23:00:00.000Z",
+      "2026-10-24T23:30:00.000Z",
+      "2026-10-25T01:00:00.000Z",
+      "2026-10-25T01:30:00.000Z",
+      "2026-10-25T02:00:00.000Z",
+      "2026-10-25T02:30:00.000Z",
+      "2026-10-25T03:00:00.000Z",
+      "2026-10-25T03:30:00.000Z",
+    ]);
   });
 });

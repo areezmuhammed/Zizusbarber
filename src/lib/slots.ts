@@ -14,7 +14,7 @@ export function generateSlots(input: {
   now: Date;
 }): Date[] {
   if (input.closed) return [];
-  const out = new Map<number, Date>(); // keyed by instant to dedupe
+  const out: Date[] = []; // stepping distinct local times never repeats an instant, so no dedupe needed
   const close = toMin(input.closeLocal);
   // Step local wall-clock minutes (not fixed ms) so DST days stay correct.
   for (let m = toMin(input.openLocal); m + input.durationMin <= close; m += input.stepMin) {
@@ -22,7 +22,7 @@ export function generateSlots(input: {
     if (!start || start < input.now) continue;
     const end = new Date(start.getTime() + input.durationMin * 60000);
     if (input.busy.some((b) => start < b.end && b.start < end)) continue;
-    out.set(start.getTime(), start);
+    out.push(start);
   }
-  return [...out.values()];
+  return out;
 }
