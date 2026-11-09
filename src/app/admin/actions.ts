@@ -15,7 +15,7 @@ export async function sendLink(_prev: { sent: boolean }, form: FormData) {
   if (email) {
     const supabase = await createClient();
     const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.NODE_ENV === "production" ? shopConfig.url : "http://localhost:3000");
+      process.env.NEXT_PUBLIC_SITE_URL || (process.env.NODE_ENV === "production" ? shopConfig.url : "http://localhost:3000");
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: false, emailRedirectTo: `${origin}/auth/callback?next=/admin` },

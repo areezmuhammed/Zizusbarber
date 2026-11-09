@@ -57,10 +57,22 @@ test("signed-in non-owner is refused", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Today" })).toHaveCount(0);
 });
 
-for (const bad of ["https://evil.example", "/\evil.example", "/admin/../x", "%2F%2Fevil.example", "//evil.example"]) {
-  test(`callback ignores unsafe next ${bad}`, async ({ page }) => {
-    const link = (await makeUser(`redir${bad.length}${bad.charCodeAt(1)}`, true)).replace("next=/admin", `next=${bad.replace("\\", "%5C")}`);
+// [raw query value as sent on the wire, the decoded `next` the callback must receive]
+const unsafe: [string, string][] = [
+  ["https://evil.example", "https://evil.example"],
+  ["/\\evil.example", "/\\evil.example"],
+  ["/%5Cevil.example", "/\\evil.example"],
+  ["/admin/../x", "/admin/../x"],
+  ["/admin/%2e%2e/x", "/admin/../x"],
+  ["%2F%2Fevil.example", "//evil.example"],
+  ["//evil.example", "//evil.example"],
+];
+unsafe.forEach(([wire, decoded], i) => {
+  test(`callback ignores unsafe next ${wire}`, async ({ page }) => {
+    const link = (await makeUser(`redir${i}`, true)).replace("next=/admin", `next=${wire}`);
+    // proves the case is real: the callback will see exactly this next value
+    expect(new URL(link, "http://x").searchParams.get("next")).toBe(decoded);
     await page.goto(link);
     await expect(page).toHaveURL(/^http:\/\/localhost:3107\/admin$/);
   });
-}
+});
