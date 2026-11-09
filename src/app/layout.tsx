@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@/components/Analytics";
 import { shopConfig } from "../../shop.config";
 import "./globals.css";
 
@@ -9,9 +10,11 @@ const sans = DM_Sans({ variable: "--font-sans", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-mono-face", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(shopConfig.url),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || shopConfig.url),
   title: `${shopConfig.name} | ${shopConfig.tagline}`,
   description: `${shopConfig.tagline}. Book online at ${shopConfig.address}, or call ${shopConfig.phone}.`,
+  openGraph: { type: "website", siteName: shopConfig.name, locale: "en_GB" }, // image: app/opengraph-image.tsx
+  twitter: { card: "summary_large_image" },
 };
 
 // Every shadcn token maps to the shop theme; there is no light palette.
@@ -56,7 +59,10 @@ const themeVars = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en-GB" className={`dark ${serif.variable} ${sans.variable} ${mono.variable} antialiased`} style={themeVars}>
-      <body className="min-h-dvh overflow-x-clip">{children}</body>
+      <body className="min-h-dvh overflow-x-clip">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }

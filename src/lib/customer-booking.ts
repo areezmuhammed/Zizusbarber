@@ -6,6 +6,7 @@ export type CustomerBooking = {
   service_name: string; price_pence: number; duration_min: number;
   start_at: string; end_at: string; status: string; first_name: string; changes: BookingChange[];
 };
+export type EraseResult = { ok: true; anonymised: number } | { ok: false; reason: "not_found" };
 export type CancelResult = { ok: true } | { ok: false; reason: "too_late" | "not_found" | "not_cancellable" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,6 +30,14 @@ export async function cancelBookingByToken(token: string): Promise<CancelResult>
   const { data, error } = await db().rpc("cancel_booking_by_token", { p_token: token });
   if (error) throw new Error(error.message);
   return data as CancelResult;
+}
+
+// Right to erasure: anonymises every booking on this booking's phone and rotates their tokens (014_privacy.sql).
+export async function eraseCustomerByToken(token: string): Promise<EraseResult> {
+  if (!isUuid(token)) return { ok: false, reason: "not_found" };
+  const { data, error } = await db().rpc("anonymise_customer_by_token", { p_token: token });
+  if (error) throw new Error(error.message);
+  return data as EraseResult;
 }
 
 const icsDate = (iso: string) => new Date(iso).toISOString().replace(/[-:]|\.\d{3}/g, "");

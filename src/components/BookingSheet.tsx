@@ -218,7 +218,13 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
                   )}
                 </div>
               ))}
-              <p className="text-sm text-muted-foreground">We only use these to confirm or change your booking.</p>
+              <p className="text-sm text-muted-foreground">
+                By booking you agree we use your name, phone and email only to manage your appointment; see{" "}
+                <a href="/privacy" target="_blank" className="text-primary underline underline-offset-4">
+                  Privacy
+                </a>
+                .
+              </p>
               <button type="submit" className={`${target} min-h-12 w-full rounded-full bg-primary font-medium text-primary-foreground`}>
                 Continue
               </button>

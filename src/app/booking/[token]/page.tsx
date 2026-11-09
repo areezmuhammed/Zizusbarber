@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { CancelBooking } from "@/components/CancelBooking";
+import { DeleteMyData } from "@/components/DeleteMyData";
 import { getBookingByToken } from "@/lib/customer-booking";
 import { formatPrice } from "@/lib/format";
 import { utcToLondon } from "@/lib/time";
@@ -61,6 +62,12 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
           <CancelBooking token={token} />
         </>
       )}
+      <section aria-label="Your data" className="mt-6 grid gap-2 border-t border-border pt-5">
+        <p className="text-sm text-muted-foreground">
+          See how we use your details in our <Link href="/privacy" className="underline underline-offset-4">privacy notice</Link>.
+        </p>
+        <DeleteMyData token={token} />
+      </section>
     </main>
   );
 }

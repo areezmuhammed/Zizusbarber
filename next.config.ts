@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
+import { redirects } from "./src/lib/redirects";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // www/non-www canonicalisation is done at the host (docs/launch-checklist.md)
+  redirects: async () => redirects(),
   cacheComponents: true,
   partialPrefetching: true,
   reactCompiler: true,

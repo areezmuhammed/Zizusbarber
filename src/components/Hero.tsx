@@ -3,8 +3,6 @@ import { Suspense } from "react";
 import { shopConfig } from "../../shop.config";
 import { StatusBadge, StatusBadgeFallback } from "./StatusBadge";
 
-const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${shopConfig.name}, ${shopConfig.address}`)}`;
-
 export function Hero() {
   return (
     <header className="relative overflow-hidden px-5 pt-10 pb-14">
@@ -22,7 +20,7 @@ export function Hero() {
         </h1>
         <p className="mt-6 max-w-[22ch] text-lg leading-snug text-foreground/90">{shopConfig.tagline}</p>
         <a
-          href={maps}
+          href={shopConfig.mapsUrl}
           className="mt-2 inline-block py-3 text-sm text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
         >
           {shopConfig.address}
