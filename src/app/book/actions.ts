@@ -3,7 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { createBooking } from "@/lib/booking";
-import { dayHours, validateDetails, type Details } from "@/lib/booking-form";
+import { dayHours, parseBooking } from "@/lib/booking-form";
 import { getClosures, getHours, getServices } from "@/lib/shop-data";
 import { generateSlots } from "@/lib/slots";
 import { addLondonDays, londonToUtc } from "@/lib/time";
@@ -41,16 +41,11 @@ export async function getTimes(serviceId: string, date: string): Promise<string[
 
 export type BookResult = { error: "taken" | "invalid" | "details" };
 
-export async function book(input: { serviceId: string; start: string } & Details): Promise<BookResult> {
-  const startAt = new Date(input.start);
-  if (Object.keys(validateDetails(input)).length || Number.isNaN(startAt.getTime())) return { error: "details" };
-  const result = await createBooking({
-    serviceId: input.serviceId,
-    startAt,
-    name: input.name.trim(),
-    phone: input.phone.trim(),
-    email: input.email.trim() || undefined,
-  });
+// Typed loosely on purpose: server actions are a public endpoint, so the shape is checked in parseBooking.
+export async function book(input: unknown): Promise<BookResult> {
+  const args = parseBooking(input);
+  if (!args) return { error: "details" };
+  const result = await createBooking(args);
   if (!result.ok) return { error: result.reason };
   redirect(`/booking/${result.token}`);
 }

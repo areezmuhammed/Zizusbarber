@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayHours, openDays, validateDetails } from "./booking-form";
+import { dayHours, normalisePhone, openDays, parseBooking, validateDetails } from "./booking-form";
 
 const everyDay = [0, 1, 2, 3, 4, 5, 6].map((weekday) => ({ weekday, open_local: "09:30:00", close_local: "20:00:00" }));
 const consecutive = (days: string[]) =>
@@ -52,5 +52,59 @@ describe("validateDetails", () => {
     const e = validateDetails({ name: "  ", phone: "12345", email: "nope" });
     expect(Object.keys(e).sort()).toEqual(["email", "name", "phone"]);
     expect(validateDetails({ name: "Sam", phone: "+1 202 555 0100", email: "" }).phone).toBeTruthy();
+  });
+
+  it("accepts 44… and +44 (0)… forms, normalised to +44", () => {
+    for (const p of ["447700900123", "+44 (0)7700 900123", "+44 7700 900123", "0044 7700.900.123", "07700 900123"]) {
+      expect(validateDetails({ name: "Sam", phone: p, email: "" })).toEqual({});
+      expect(normalisePhone(p)).toBe("+447700900123");
+    }
+  });
+
+  it("rejects too-short and lettered phones", () => {
+    for (const p of ["07700 9001", "07700 9001ab", "phone"]) {
+      expect(validateDetails({ name: "Sam", phone: p, email: "" }).phone).toBeTruthy();
+      expect(normalisePhone(p)).toBeNull();
+    }
+  });
+
+  it("caps name, phone and email lengths", () => {
+    expect(validateDetails({ name: "a".repeat(101), phone: "07700900123", email: "" }).name).toBeTruthy();
+    expect(validateDetails({ name: "Sam", phone: `07700900123${" ".repeat(20)}`, email: "" }).phone).toBeTruthy();
+    expect(validateDetails({ name: "Sam", phone: "07700900123", email: `${"a".repeat(250)}@b.co` }).email).toBeTruthy();
+  });
+});
+
+describe("parseBooking", () => {
+  const good = {
+    serviceId: "8f1c2a34-5b6d-4e7f-8a9b-0c1d2e3f4a5b",
+    start: "2026-11-13T10:45:00.000Z",
+    name: " Sam ",
+    phone: "+44 (0)7700 900123",
+    email: "",
+  };
+
+  it("returns normalised args for good input", () => {
+    expect(parseBooking(good)).toEqual({
+      serviceId: good.serviceId,
+      startAt: new Date(good.start),
+      name: "Sam",
+      phone: "+447700900123",
+      email: undefined,
+    });
+  });
+
+  it("returns null, without throwing, for malformed input", () => {
+    for (const bad of [
+      null,
+      "x",
+      { ...good, name: 42 },
+      { ...good, phone: ["07700900123"] },
+      { ...good, email: undefined },
+      { ...good, serviceId: "not-a-uuid" },
+      { ...good, start: "tomorrow" },
+      { ...good, start: "2026-13-45T10:45:00Z" },
+      { ...good, name: "a".repeat(101) },
+    ]) expect(parseBooking(bad)).toBeNull();
   });
 });

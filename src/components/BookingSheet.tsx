@@ -39,6 +39,7 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
 
   function loadTimes(svc: Service, d: string) {
     setDate(d);
+    setStart(null);
     setTimes(null);
     startTransition(async () => setTimes(await getTimes(svc.id, d)));
   }
@@ -71,7 +72,13 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
     startTransition(async () => {
       const res = await book({ serviceId: service.id, start, ...details });
       // Only reached on failure; success redirects.
-      if (res.error === "details") return go(2);
+      if (res.error === "details") {
+        const errs = validateDetails(details);
+        go(2);
+        setErrors(errs);
+        if (!Object.keys(errs).length) setNotice("Those details could not be booked. Check them and try again.");
+        return;
+      }
       setStart(null);
       setStep(1);
       setNotice(
@@ -108,7 +115,8 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
           {TITLES[step]}
         </h1>
 
-        <p aria-live="assertive" className="px-5 text-sm font-medium text-destructive empty:hidden">
+        {/* Always in the DOM (only visually hidden) so screen readers announce changes */}
+        <p aria-live="assertive" className={notice ? "px-5 text-sm font-medium text-destructive" : "sr-only"}>
           {notice}
         </p>
 

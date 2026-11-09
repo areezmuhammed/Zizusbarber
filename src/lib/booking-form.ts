@@ -29,11 +29,48 @@ export function openDays(now: Date, count: number, hours: HoursRow[], closures: 
 
 export type Details = { name: string; phone: string; email: string };
 
+// UK number as +44 plus 9-10 digits, or null. Accepts 07…, 447…, +44 7…, 0044 7… and "+44 (0)7…",
+// with spaces, brackets, hyphens and dots.
+export function normalisePhone(raw: string): string | null {
+  const s = raw
+    .trim()
+    .replace(/^(\+?44|0044)\s*\(0\)/, "$1")
+    .replace(/[\s().-]/g, "")
+    .replace(/^(?:\+44|0044)/, "44");
+  if (!/^(?:0|44)\d{9,10}$/.test(s)) return null;
+  return `+44${s.replace(/^(?:0|44)/, "")}`;
+}
+
+const LIMITS = { name: 100, phone: 30, email: 254 };
+
 export function validateDetails(d: Details): Partial<Record<keyof Details, string>> {
   const e: Partial<Record<keyof Details, string>> = {};
-  if (!d.name.trim()) e.name = "Enter your name";
-  // UK numbers: 0 or +44/0044, then 9-10 digits; spaces, dashes and brackets allowed
-  if (!/^(?:0|\+44|0044)\d{9,10}$/.test(d.phone.replace(/[\s()-]/g, ""))) e.phone = "Enter a UK phone number, like 07700 900123";
-  if (d.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) e.email = "Enter a valid email or leave it blank";
+  if (typeof d.name !== "string" || !d.name.trim()) e.name = "Enter your name";
+  else if (d.name.length > LIMITS.name) e.name = `Keep your name under ${LIMITS.name} characters`;
+  if (typeof d.phone !== "string" || d.phone.length > LIMITS.phone || !normalisePhone(d.phone))
+    e.phone = "Enter a UK phone number, like 07700 900123";
+  if (typeof d.email !== "string") e.email = "Enter a valid email or leave it blank";
+  else if (d.email.trim() && (d.email.length > LIMITS.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())))
+    e.email = "Enter a valid email or leave it blank";
   return e;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
+
+// Trust boundary for the book action: anything malformed becomes null, never an exception.
+export function parseBooking(input: unknown) {
+  if (!input || typeof input !== "object") return null;
+  const { serviceId, start, name, phone, email } = input as Record<string, unknown>;
+  if (typeof serviceId !== "string" || !UUID.test(serviceId)) return null;
+  if (typeof start !== "string" || !ISO.test(start) || Number.isNaN(Date.parse(start))) return null;
+  if (typeof name !== "string" || typeof phone !== "string" || typeof email !== "string") return null;
+  if (Object.keys(validateDetails({ name, phone, email })).length) return null;
+  return {
+    serviceId,
+    startAt: new Date(start),
+    name: name.trim(),
+    phone: normalisePhone(phone)!,
+    email: email.trim() || undefined,
+  };
 }

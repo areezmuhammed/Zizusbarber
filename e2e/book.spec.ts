@@ -77,6 +77,7 @@ test("books service, date, time and details, and stores the booking", async ({ p
   const rows: { start_at: string; phone: string }[] = await res.json();
   expect(rows).toHaveLength(1);
   expect(new Date(rows[0].start_at).toISOString()).toBe(start);
+  expect(rows[0].phone).toBe("+447700900123");
 });
 
 test("a slot taken meanwhile shows the message and refreshes times, keeping details", async ({ page }) => {
