@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { cacheLife } from "next/cache";
+import type { Closure } from "./booking-form";
 
 export type Service = { id: string; name: string; price_pence: number; duration_min: number };
 export type Hours = { weekday: number; open_local: string; close_local: string };
@@ -57,4 +58,11 @@ export async function getStatus(): Promise<Status | null> {
   "use cache";
   cacheLife("seconds");
   return must(await db().from("shop_status").select("state,in_shop,waiting,note").maybeSingle());
+}
+
+// Closures on or after a London date; `from` is the cache key, so the list rolls over daily.
+export async function getClosures(from: string): Promise<Closure[]> {
+  "use cache";
+  cacheLife("minutes");
+  return must(await db().from("closures").select("date,open_local,close_local").gte("date", from));
 }

@@ -10,6 +10,7 @@ export const shopConfig = {
     surface: "#161618",
     text: "#F2EDE4",
     accent: "#C8A15A",
-    muted: "#8A857C",
+    muted: "#9E998F", // >= 4.5:1 on bg, surface and raised surfaces
+    destructive: "#E5484D",
   },
 };

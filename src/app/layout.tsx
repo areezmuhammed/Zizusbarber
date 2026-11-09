@@ -33,7 +33,7 @@ const themeVars = {
   "--muted-foreground": t.muted,
   "--accent": raised,
   "--accent-foreground": t.text,
-  "--destructive": "#E5484D",
+  "--destructive": t.destructive,
   "--border": line,
   "--input": `color-mix(in oklab, ${t.text} 20%, transparent)`,
   "--ring": t.accent,
