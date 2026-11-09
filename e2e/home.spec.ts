@@ -34,7 +34,9 @@ test("HairSalon JSON-LD present without aggregateRating", async ({ page }) => {
   const salon = raw.map((r) => JSON.parse(r)).find((j) => j["@type"] === "HairSalon");
   expect(salon).toBeTruthy();
   expect(salon.name).toBe("Zizu's Barbers");
-  expect(salon.telephone).toBeTruthy();
+  expect(salon.telephone).toBe("+447535423544");
+  expect(salon.address.streetAddress).toBe("135 Upperthorpe Rd");
+  expect(salon.address.postalCode).toBe("S6 3EB");
   expect(salon.openingHoursSpecification.length).toBeGreaterThan(0);
   expect(JSON.stringify(raw)).not.toContain("aggregateRating");
 });

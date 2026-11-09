@@ -1,9 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans, JetBrains_Mono } from "next/font/google";
-import { DAYS } from "@/components/Hours";
-import { hhmm } from "@/lib/format";
-import { getHours } from "@/lib/shop-data";
 import { shopConfig } from "../../shop.config";
 import "./globals.css";
 
@@ -17,52 +14,49 @@ export const metadata: Metadata = {
   description: `${shopConfig.tagline}. Book online at ${shopConfig.address}, or call ${shopConfig.phone}.`,
 };
 
+// Every shadcn token maps to the shop theme; there is no light palette.
 const t = shopConfig.theme;
+const line = `color-mix(in oklab, ${t.text} 14%, transparent)`;
+const raised = `color-mix(in oklab, ${t.text} 8%, ${t.surface})`;
 const themeVars = {
   "--background": t.bg,
   "--foreground": t.text,
   "--card": t.surface,
   "--card-foreground": t.text,
+  "--popover": t.surface,
+  "--popover-foreground": t.text,
   "--primary": t.accent,
   "--primary-foreground": t.bg,
+  "--secondary": raised,
+  "--secondary-foreground": t.text,
   "--muted": t.surface,
   "--muted-foreground": t.muted,
-  "--border": `color-mix(in oklab, ${t.text} 14%, transparent)`,
+  "--accent": raised,
+  "--accent-foreground": t.text,
+  "--destructive": "#E5484D",
+  "--border": line,
+  "--input": `color-mix(in oklab, ${t.text} 20%, transparent)`,
   "--ring": t.accent,
+  "--chart-1": t.accent,
+  "--chart-2": t.text,
+  "--chart-3": t.muted,
+  "--chart-4": `color-mix(in oklab, ${t.accent} 60%, ${t.bg})`,
+  "--chart-5": `color-mix(in oklab, ${t.muted} 60%, ${t.bg})`,
+  "--sidebar": t.surface,
+  "--sidebar-foreground": t.text,
+  "--sidebar-primary": t.accent,
+  "--sidebar-primary-foreground": t.bg,
+  "--sidebar-accent": raised,
+  "--sidebar-accent-foreground": t.text,
+  "--sidebar-border": line,
+  "--sidebar-ring": t.accent,
+  colorScheme: "dark",
 } as CSSProperties;
 
-// shortcut: parses "street, Town POSTCODE"; move to structured config fields if a shop's address doesn't fit
-const [, street, town, postalCode] = shopConfig.address.match(/^(.*), (.*) (\S+ \S+)$/) ?? [];
-
-async function salonJsonLd() {
-  const hours = await getHours();
-  return {
-    "@context": "https://schema.org",
-    "@type": "HairSalon",
-    name: shopConfig.name,
-    url: shopConfig.url,
-    telephone: shopConfig.phone,
-    address: { "@type": "PostalAddress", streetAddress: street, addressLocality: town, postalCode, addressCountry: "GB" },
-    openingHoursSpecification: hours.map((h) => ({
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: `https://schema.org/${DAYS[h.weekday]}`,
-      opens: hhmm(h.open_local),
-      closes: hhmm(h.close_local),
-    })),
-  };
-}
-
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const jsonLd = await salonJsonLd();
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-GB" className={`${serif.variable} ${sans.variable} ${mono.variable} antialiased`} style={themeVars}>
-      <body className="min-h-dvh overflow-x-clip">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
-        />
-        {children}
-      </body>
+    <html lang="en-GB" className={`dark ${serif.variable} ${sans.variable} ${mono.variable} antialiased`} style={themeVars}>
+      <body className="min-h-dvh overflow-x-clip">{children}</body>
     </html>
   );
 }
