@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(25);
 
 insert into auth.users (id) values
   ('00000000-0000-0000-0000-0000000000c1'), ('00000000-0000-0000-0000-0000000000c2');
@@ -65,6 +65,7 @@ update services set duration_min = 60, price_pence = 2500 where id = '00000000-0
 reset role;
 select is((select count(*)::int from closures where id = '00000000-0000-0000-0000-0000000000d1'), 0, 'closure deleted by owner');
 select is((select duration_min from services where id = '00000000-0000-0000-0000-0000000000a1'), 60, 'owner changed the duration');
+select is((select open_local from opening_hours where weekday = 2 and barber_id is null), '09:00'::time, 'owner hours update stored');
 select is((select tstzrange(start_at, end_at) from bookings where customer_name = 'Past'),
   tstzrange('2030-01-01 10:00+00', '2030-01-01 10:30+00'), 'existing booking keeps its end_at after a duration change');
 

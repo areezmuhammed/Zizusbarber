@@ -26,7 +26,7 @@ export async function getServices(): Promise<Service[]> {
   cacheLife("minutes");
   cacheTag(TAGS.services);
   return must(
-    await db().from("services").select("id,name,price_pence,duration_min").eq("active", true).order("sort"),
+    await db().from("services").select("id,name,price_pence,duration_min").eq("active", true).order("sort").order("name"),
   );
 }
 

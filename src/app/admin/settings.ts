@@ -72,7 +72,10 @@ export async function moveService(input: unknown): Promise<SettingsResult> {
   for (const [k, s] of data.entries()) {
     if (s.sort === k + 1) continue;
     const { error: e } = await db.from("services").update({ sort: k + 1 }).eq("id", s.id);
-    if (e) return done(e, TAGS.services);
+    if (e) {
+      updateTag(TAGS.services); // earlier rows may already be renumbered
+      return done(e, TAGS.services);
+    }
   }
   return done(null, TAGS.services);
 }

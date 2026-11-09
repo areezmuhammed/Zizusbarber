@@ -14,23 +14,39 @@ const rest = async (path: string, init: RequestInit = {}) => {
 let seededHours: Record<string, unknown>[] = [];
 let seededServices: Record<string, unknown>[] = [];
 
-async function cleanup() {
-  const like = encodeURIComponent(`${PREFIX}*`);
-  await rest(`closures?reason=like.${like}`, { method: "DELETE" });
-  await rest(`services?name=like.${like}`, { method: "DELETE" });
-}
-
 test.beforeAll(async () => {
   seededHours = await rest("opening_hours?select=weekday,open_local,close_local&barber_id=is.null");
   seededServices = await rest("services?select=id,name,price_pence,duration_min,active,sort");
 });
 
+// Every teardown step runs even if an earlier one throws; the first error is re-thrown at the end.
 test.afterAll(async () => {
-  await cleanup();
-  await rest("opening_hours?barber_id=is.null", { method: "DELETE" });
-  await rest("opening_hours", { method: "POST", body: JSON.stringify(seededHours) });
-  for (const s of seededServices) await rest(`services?id=eq.${s.id}`, { method: "PATCH", body: JSON.stringify(s) });
-  await deleteUsers();
+  const like = encodeURIComponent(`${PREFIX}*`);
+  const errors: unknown[] = [];
+  const step = async (fn: () => Promise<unknown>) => {
+    try {
+      await fn();
+    } catch (e) {
+      errors.push(e);
+    }
+  };
+  await step(() => rest(`bookings?customer_name=like.${like}`, { method: "DELETE" })); // before services: FK
+  await step(() => rest(`closures?reason=like.${like}`, { method: "DELETE" }));
+  await step(() => rest(`services?name=like.${like}`, { method: "DELETE" }));
+  // upsert the seeded days first, then drop the others, so a failure never leaves the week empty
+  await step(() =>
+    rest("opening_hours?on_conflict=barber_id,weekday", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify(seededHours.map((h) => ({ barber_id: null, ...h }))),
+    }),
+  );
+  await step(() =>
+    rest(`opening_hours?barber_id=is.null&weekday=not.in.(${seededHours.map((h) => h.weekday).join(",")})`, { method: "DELETE" }),
+  );
+  for (const sv of seededServices) await step(() => rest(`services?id=eq.${sv.id}`, { method: "PATCH", body: JSON.stringify(sv) }));
+  await step(deleteUsers);
+  if (errors.length) throw errors[0];
 });
 
 async function signedIn(browser: Browser, label: string, owner: boolean) {
@@ -118,6 +134,21 @@ test("editing a service's price and duration shows at once on home and in /book 
   const order: { name: string }[] = await rest("services?select=name&order=sort");
   expect(order.at(-1)!.name).not.toBe(name);
   expect(order.at(-2)!.name).toBe(name);
+
+  // two-step delete (no bookings reference it): first tap asks, cancel keeps it, "Yes, delete" removes it
+  const svcRows = () => rest(`services?select=id&name=eq.${encodeURIComponent(name)}`);
+  const item2 = serviceItem(owner, name); // its edit panel is still open from above
+  const confirm = item2.getByRole("group", { name: `Confirm delete ${name}` });
+  await item2.getByRole("button", { name: `Delete ${name}` }).click();
+  await expect(confirm).toBeVisible();
+  expect(await svcRows()).toHaveLength(1);
+  await confirm.getByRole("button", { name: "Cancel" }).click();
+  await expect(item2.getByRole("button", { name: `Delete ${name}` })).toBeVisible();
+  expect(await svcRows()).toHaveLength(1);
+  await item2.getByRole("button", { name: `Delete ${name}` }).click();
+  await confirm.getByRole("button", { name: "Yes, delete" }).click();
+  await expect(serviceItem(owner, name)).toHaveCount(0);
+  expect(await svcRows()).toHaveLength(0);
   await owner.context().close();
 });
 
@@ -143,7 +174,8 @@ test("hiding a service removes it from home and /book; a service with bookings c
   await owner.goto("/admin/settings");
   const item = serviceItem(owner, name);
   await item.getByText(`Edit ${name}`).click();
-  await item.getByRole("button", { name: "Delete service" }).click();
+  await item.getByRole("button", { name: `Delete ${name}` }).click();
+  await item.getByRole("group", { name: `Confirm delete ${name}` }).getByRole("button", { name: "Yes, delete" }).click();
   await expect(item.getByRole("status").first()).toContainText("can't be deleted");
   await item.getByLabel("Show on the website").uncheck();
   await item.getByLabel("Minutes").fill("45");
@@ -186,8 +218,19 @@ test("a closure removes that day from /book and shows on the home page", async (
 
   // deleting it brings the day back
   const when = target.setLocale("en-GB").toFormat("ccc d LLL yyyy");
+  const closureRows = () => rest(`closures?select=id&reason=eq.${encodeURIComponent(reason)}`);
+  const confirm = owner.getByRole("group", { name: `Confirm delete closure on ${when}` });
+  await owner.getByRole("button", { name: `Delete closure on ${when}` }).click(); // first tap only asks
+  await expect(confirm).toBeVisible();
+  for (const b of await confirm.getByRole("button").all()) expect((await b.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  expect(await closureRows()).toHaveLength(1);
+  await confirm.getByRole("button", { name: "Cancel" }).click(); // cancel keeps it
+  await expect(confirm).toBeHidden();
+  expect(await closureRows()).toHaveLength(1);
   await owner.getByRole("button", { name: `Delete closure on ${when}` }).click();
+  await confirm.getByRole("button", { name: "Yes, delete" }).click();
   await expect(owner.getByText("No closures coming up.")).toBeVisible();
+  expect(await closureRows()).toHaveLength(0);
   expect(await bookDays(page, /^Hair Cut, £14, 30 min$/)).toContain(targetLabel);
   await owner.context().close();
 });

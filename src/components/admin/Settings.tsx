@@ -136,13 +136,31 @@ function ServiceForm({ s }: { s?: SettingsService }) {
       </label>
       <button disabled={pending} className={primary}>{s ? "Save service" : "Add service"}</button>
       {s && (
-        <button type="button" disabled={pending} onClick={() => run(() => deleteService(s.id), "Deleted.")}
-          className={`${quiet} text-destructive`}>
-          Delete service
-        </button>
+        <ConfirmDelete label="Delete service" what={s.name} pending={pending} onConfirm={() => run(() => deleteService(s.id), "Deleted.")} />
       )}
       {out}
     </form>
+  );
+}
+
+// Two-step delete: the first tap only asks; "Yes, delete" runs it, "Cancel" puts the first button back.
+function ConfirmDelete({ label, what, pending, onConfirm }: { label: string; what: string; pending: boolean; onConfirm: () => void }) {
+  const [asking, setAsking] = useState(false);
+  if (!asking)
+    return (
+      <button type="button" disabled={pending} aria-label={`Delete ${what}`} onClick={() => setAsking(true)} className={`${quiet} text-destructive`}>
+        {label}
+      </button>
+    );
+  return (
+    <div role="group" aria-label={`Confirm delete ${what}`} className="flex basis-full flex-wrap items-center gap-2">
+      <span className="flex-1 text-destructive">Delete {what}?</span>
+      <button type="button" autoFocus onClick={() => setAsking(false)} className={quiet}>Cancel</button>
+      <button type="button" disabled={pending} onClick={() => { setAsking(false); onConfirm(); }}
+        className={`${btn} bg-destructive font-semibold text-background`}>
+        Yes, delete
+      </button>
+    </div>
   );
 }
 
@@ -215,7 +233,7 @@ function Closures({ closures, today }: { closures: SettingsClosure[]; today: str
           {closures.map((c) => {
             const when = DateTime.fromISO(c.date).setLocale("en-GB").toFormat("ccc d LLL yyyy");
             return (
-              <li key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+              <li key={c.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <div className="min-w-0 flex-1">
                   <p className="lining-nums">{when}</p>
                   <p className="text-sm text-muted-foreground">
@@ -223,10 +241,8 @@ function Closures({ closures, today }: { closures: SettingsClosure[]; today: str
                     {c.reason ? `, ${c.reason}` : ""}
                   </p>
                 </div>
-                <button type="button" disabled={del.pending} aria-label={`Delete closure on ${when}`}
-                  onClick={() => del.run(() => deleteClosure(c.id), "Closure deleted.")} className={`${quiet} text-destructive`}>
-                  Delete
-                </button>
+                <ConfirmDelete label="Delete" what={`closure on ${when}`} pending={del.pending}
+                  onConfirm={() => del.run(() => deleteClosure(c.id), "Closure deleted.")} />
               </li>
             );
           })}

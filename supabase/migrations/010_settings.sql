@@ -1,4 +1,7 @@
 -- Owner settings (Task 13).
+-- Fails loudly (and applies nothing) if existing data breaks these rules. Before applying to a database with
+-- real data, clean first: keep one shop-wide opening_hours row per weekday (and per barber), one closures row
+-- per date, and give any closure with only one of open_local/close_local set both values or neither.
 -- One hours row per weekday (per barber, null = whole shop): the settings page edits a day, never a list of shifts.
 alter table opening_hours
   add constraint opening_hours_one_per_day unique nulls not distinct (barber_id, weekday);
