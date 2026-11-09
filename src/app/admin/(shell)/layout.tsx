@@ -1,16 +1,18 @@
-import { redirect } from "next/navigation";
 import { signOut } from "../actions";
-import { createClient } from "@/lib/supabase/server";
+import { NotOwnerError, requireOwner } from "@/lib/auth";
 
 const nav = ["Today", "Status", "Settings", "Gallery"];
 
 export default async function AdminShell({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser(); // verified with the auth server
-  if (!data.user) redirect("/admin/login");
-  const { data: isOwner } = await supabase.rpc("is_owner");
+  let refused = false;
+  try {
+    await requireOwner();
+  } catch (e) {
+    if (!(e instanceof NotOwnerError)) throw e; // keeps redirect() working
+    refused = true;
+  }
 
-  if (!isOwner) {
+  if (refused) {
     return (
       <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-4">
         <h1 className="text-2xl font-bold">Not authorised</h1>

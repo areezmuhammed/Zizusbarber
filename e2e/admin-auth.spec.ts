@@ -57,7 +57,10 @@ test("signed-in non-owner is refused", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Today" })).toHaveCount(0);
 });
 
-test("callback ignores off-site next", async ({ page }) => {
-  await page.goto((await makeUser("redir", true)).replace("next=/admin", "next=//evil.example"));
-  await expect(page).toHaveURL(/localhost:3107\/admin$/);
-});
+for (const bad of ["https://evil.example", "/\evil.example", "/admin/../x", "%2F%2Fevil.example", "//evil.example"]) {
+  test(`callback ignores unsafe next ${bad}`, async ({ page }) => {
+    const link = (await makeUser(`redir${bad.length}${bad.charCodeAt(1)}`, true)).replace("next=/admin", `next=${bad.replace("\\", "%5C")}`);
+    await page.goto(link);
+    await expect(page).toHaveURL(/^http:\/\/localhost:3107\/admin$/);
+  });
+}
