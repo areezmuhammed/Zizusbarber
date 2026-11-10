@@ -29,14 +29,20 @@ Remove it (`DRAFT` in `src/components/LegalPage.tsx`) only after:
 - [ ] Vault secrets `notify_url` and `cron_secret` created.
 - [ ] Twilio Geo Permissions: United Kingdom only.
 - [ ] Twilio spend/usage alert set (daily and monthly), auto-recharge off or capped.
-- [ ] Vercel Firewall rate-limit rule on `POST /book`; Supabase API/Auth rate limits reviewed.
+- [ ] Vercel Firewall rate-limit rule on `POST /book`; Supabase API/Auth rate limits reviewed (still recommended:
+      the anon key is public, and these stop a flood before it reaches the database caps below).
+- [ ] Owner knows the database caps on public bookings (`017_booking_abuse_limits.sql`, owner bookings exempt):
+      5 per phone per 24h (cancelled included) and 20 per hour shop-wide ("busy" message). Constants
+      `c_phone_per_day` / `c_shop_per_hour` in `create_booking`; raise them with a new migration, or clear the
+      24h log with `delete from public_booking_log;` (`docs/cutover.md`, B "Abuse limits").
+- [ ] SMS goes to UK mobiles (`+447`) only; landline bookings get email if given, else no message.
 - [ ] Owner knows the junk-booking bulk-cancel SQL (`docs/cutover.md`, B "Abuse limits").
 
 ## Supabase and Vercel
 
 - [ ] NEW Supabase and Vercel projects under the owner's own accounts only (never another company's or a personal
       project; no `supabase link` to an existing project). See the warning at the top of `docs/cutover.md`.
-- [ ] Supabase Pro plan (daily backups); `npx supabase db push` applies all migrations up to `016_hardening.sql`.
+- [ ] Supabase Pro plan (daily backups); `npx supabase db push` applies all migrations up to `017_booking_abuse_limits.sql`.
 - [ ] Supabase Auth: Site URL = production URL; redirect allow-list includes `https://zizusbarbers.com/auth/callback`.
 - [ ] Vercel: paid plan (commercial use); env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
       `NEXT_PUBLIC_SITE_URL=https://zizusbarbers.com` (also used for `metadataBase`, so og:image URLs are absolute).

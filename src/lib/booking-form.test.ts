@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayHours, normalisePhone, openDays, parseBooking, validateDetails } from "./booking-form";
+import { dayHours, limitNotice, normalisePhone, openDays, parseBooking, validateDetails } from "./booking-form";
 
 const everyDay = [0, 1, 2, 3, 4, 5, 6].map((weekday) => ({ weekday, open_local: "09:30:00", close_local: "20:00:00" }));
 const consecutive = (days: string[]) =>
@@ -106,5 +106,18 @@ describe("parseBooking", () => {
       { ...good, start: "2026-13-45T10:45:00Z" },
       { ...good, name: "a".repeat(101) },
     ]) expect(parseBooking(bad)).toBeNull();
+  });
+});
+
+describe("limitNotice", () => {
+  it("too_many covers the 3-upcoming and the 24h caps and gives the phone", () => {
+    expect(limitNotice("too_many", "07535 423544")).toBe(
+      "You have made several bookings recently, please call us on 07535 423544 to add more.",
+    );
+  });
+  it("busy asks to try again later or call", () => {
+    expect(limitNotice("busy", "07535 423544")).toBe(
+      "We are getting a lot of requests right now. Please try again in a few minutes or call us on 07535 423544.",
+    );
   });
 });

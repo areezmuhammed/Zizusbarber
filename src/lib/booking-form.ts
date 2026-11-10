@@ -16,6 +16,13 @@ export function dayHours(date: string, hours: HoursRow[], closures: Closure[]) {
   };
 }
 
+// create_booking's public limits (017): too_many = 3 upcoming or 5 made in 24h for one phone; busy = shop-wide hourly cap.
+export function limitNotice(reason: "too_many" | "busy", phone: string) {
+  return reason === "busy"
+    ? `We are getting a lot of requests right now. Please try again in a few minutes or call us on ${phone}.`
+    : `You have made several bookings recently, please call us on ${phone} to add more.`;
+}
+
 // How far ahead the public may book. create_booking enforces the same 90 days (supabase/migrations/016_hardening.sql).
 export const BOOKING_HORIZON_DAYS = 90;
 

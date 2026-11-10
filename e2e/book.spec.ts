@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
 const API = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -5,10 +6,11 @@ const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const admin = { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` };
 const PREFIX = "E2E Book";
-// unique per run: create_booking allows at most 3 upcoming bookings per phone (016)
+// unique per run: create_booking allows at most 3 upcoming bookings per phone (016) and 5 per 24h (017)
 const TAIL = String(Date.now()).slice(-5);
 const PHONE = `07700 9${TAIL}`;
 const STORED = `+4477009${TAIL}`;
+const RIVAL = `+4477008${TAIL}`; // unique per run too: 017 allows 5 public bookings per phone per 24h
 
 // Test bookings are found and removed by name, so a failed run never leaves slots blocked.
 async function cleanup() {
@@ -17,6 +19,10 @@ async function cleanup() {
     headers: admin,
   });
   expect(res.ok).toBe(true);
+  // 017 counts logged public bookings even after the rows are gone (5/phone/24h, 20/hour shop-wide)
+  const hashes = [STORED, RIVAL].map((p) => createHash("md5").update(p).digest("hex")).join(",");
+  const log = await fetch(`${API}/rest/v1/public_booking_log?phone_hash=in.(${hashes})`, { method: "DELETE", headers: admin });
+  expect(log.ok).toBe(true);
 }
 test.beforeAll(cleanup);
 test.afterAll(cleanup);
@@ -93,7 +99,7 @@ test("a slot taken meanwhile shows the message and refreshes times, keeping deta
   const rival = await fetch(`${API}/rest/v1/rpc/create_booking`, {
     method: "POST",
     headers: { apikey: ANON, "Content-Type": "application/json" },
-    body: JSON.stringify({ p_service: id, p_start: start, p_name: `${PREFIX} rival`, p_phone: "+447700900000", p_email: "" }),
+    body: JSON.stringify({ p_service: id, p_start: start, p_name: `${PREFIX} rival`, p_phone: RIVAL, p_email: "" }),
   });
   expect(rival.ok).toBe(true);
 
@@ -125,7 +131,7 @@ test("a 4th upcoming booking for one phone gets the call-us message", async ({ p
 
   await toConfirm(page, 3, `${PREFIX} cap 4th`, `07700 9${tail}`);
   await page.getByRole("button", { name: "Confirm booking" }).click();
-  await expect(page.getByText("You already have 3 upcoming bookings, please call us")).toBeVisible();
+  await expect(page.getByText("You have made several bookings recently, please call us")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Check and confirm" })).toBeVisible();
 });
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { DateTime } from "luxon";
 import { ChevronLeft } from "lucide-react";
 import { book, getTimes } from "@/app/book/actions";
-import { validateDetails, type Details } from "@/lib/booking-form";
+import { limitNotice, validateDetails, type Details } from "@/lib/booking-form";
 import { formatPrice } from "@/lib/format";
 import type { Service } from "@/lib/shop-data";
 import { shopConfig } from "../../shop.config";
@@ -84,8 +84,8 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
     startTransition(async () => {
       const res = await book({ serviceId: service.id, start, ...details });
       // Only reached on failure; success redirects.
-      if (res.error === "too_many") {
-        setNotice(`You already have 3 upcoming bookings, please call us on ${shopConfig.phone} to add more.`);
+      if (res.error === "too_many" || res.error === "busy") {
+        setNotice(limitNotice(res.error, shopConfig.phone));
         return;
       }
       if (res.error === "details") {

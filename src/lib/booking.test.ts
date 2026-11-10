@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { createBooking } from "./booking";
@@ -24,8 +25,26 @@ const later = ["12:00", "13:00", "14:00"].map((t) => londonToUtc(DAY, t)!);
 const PHONE = "+447700900321";
 const admin = createClient(URL, SERVICE);
 
+describe("createBooking error mapping", () => {
+  const fail = (message: string) =>
+    ({ rpc: async () => ({ data: null, error: { message } }) }) as unknown as Parameters<typeof createBooking>[1];
+  const args = { serviceId: "s", startAt: start, name: "T", phone: PHONE };
+  it.each([
+    ["slot_taken", "taken"],
+    ["too_many_bookings", "too_many"],
+    ["busy", "busy"],
+    ["outside_hours", "invalid"],
+  ])("%s -> %s", async (message, reason) => {
+    expect(await createBooking(args, fail(message))).toEqual({ ok: false, reason });
+  });
+});
+
 describe.skipIf(!up)("createBooking (local stack)", () => {
-  const clean = () => admin.from("bookings").delete().eq("phone", PHONE);
+  // 017 logs every public booking (md5 of the phone) and counts it even after the booking row is deleted
+  const clean = async () => {
+    await admin.from("bookings").delete().eq("phone", PHONE);
+    await admin.from("public_booking_log").delete().eq("phone_hash", createHash("md5").update(PHONE).digest("hex"));
+  };
   beforeAll(clean);
   afterAll(clean);
 

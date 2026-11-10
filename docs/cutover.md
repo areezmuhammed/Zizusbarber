@@ -56,7 +56,7 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
       `npx supabase link --project-ref <project-ref>` (ref is in the dashboard URL / Project Settings).
 - [ ] Apply migrations: `npx supabase db push`.
 
-  Migration numbering is non-contiguous: `001`-`005` then `007`-`016` (there is **no 006**; this is expected).
+  Migration numbering is non-contiguous: `001`-`005` then `007`-`017` (there is **no 006**; this is expected).
   On a FRESH production project `db push` applies all of them in filename order, which works. `--include-all` is only
   needed on a database that already applied later migrations out of order (not the case for a new project).
   Do not run `seed.sql` on production (it is local-only sample data, see "Seed" below).
@@ -78,6 +78,7 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
   | `014_privacy.sql` | `anonymise_customer_by_token`, `anonymise_old_bookings`, daily `anonymise-old-bookings` cron job |
   | `015_reminders_opt_out.sql` | `bookings.reminders_off`, `set_reminders_off_by_token`, scrub `booking_changes.reason` |
   | `016_hardening.sql` | Erasure by token = that booking only; `create_booking` UK-phone/length/90-day/3-per-phone limits; `get_busy` 31-day clamp; the `shop_status` row; lookup indexes |
+  | `017_booking_abuse_limits.sql` | `public_booking_log` (md5 of phone + time, kept 24h); public `create_booking` capped at 5 bookings per phone per 24h (cancelled included) and 20 per hour shop-wide |
 
 - [ ] Confirm: `npx supabase migration list` shows every file applied (Local and Remote columns match).
 - [ ] Seed (production data by hand, not `seed.sql`): in the dashboard SQL editor or the owner's admin (Settings),
@@ -123,7 +124,20 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
 
 - [ ] **Abuse limits (anonymous booking and SMS cost).** Booking is public and every booking can send an SMS billed
       to the owner. The database already refuses non-UK phones, bookings more than 90 days ahead and a 4th upcoming
-      booking per phone (`016_hardening.sql`), and the notify job only texts `+44` numbers. Also:
+      booking per phone (`016_hardening.sql`), and the notify job only texts UK mobiles (`+447`; landlines get
+      email if they gave one, else nothing). Two more database caps apply to the public only (`017_booking_abuse_limits.sql`;
+      the owner's own bookings from the admin are exempt and never counted):
+  - **5 bookings per phone per 24 hours**, cancelled ones included, so book -> cancel -> rebook cannot text one
+    number forever. The customer sees "You have made several bookings recently, please call us...".
+  - **20 public bookings per hour for the whole shop**, so a script rotating fake numbers cannot fill the diary
+    or text hundreds of strangers. Customers then see "We are getting a lot of requests right now...". Real
+    volume is a few an hour; if the shop ever hits this legitimately, raise it.
+  - The numbers are the constants `c_phone_per_day` and `c_shop_per_hour` at the top of `create_booking` in
+    `supabase/migrations/017_booking_abuse_limits.sql`. To raise them, add a new migration that create-or-replaces
+    `create_booking` (copy of 017 with the new numbers) and `db push` it; never edit an applied migration.
+    To unblock now, as SQL: `delete from public_booking_log;` (it only holds the last 24h of public bookings).
+  - These caps do not replace the dashboard limits below: keep the Vercel firewall rule and Supabase rate limits.
+  Also:
   - [ ] Twilio -> Messaging -> Settings -> **Geo permissions**: allow **United Kingdom only** (blocks SMS pumping to
         premium foreign numbers even if a bad number gets in).
   - [ ] Twilio -> Billing / Usage -> **usage trigger / spend alert** (e.g. email at GBP 10 per day and GBP 30 per
@@ -131,7 +145,8 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
   - [ ] Vercel -> Project -> Firewall -> **rate limit rule** on `POST /book` (server actions post to the page),
         e.g. 10 requests per minute per IP, action Deny/429 (**verify** availability on the plan).
   - [ ] Supabase -> Project Settings -> API / Auth rate limits: keep the defaults or lower them; the anon key is
-        public, so `create_booking` can also be called directly on the REST API (the database limits above still apply).
+        public, so `create_booking` can also be called directly on the REST API (the database limits above still apply;
+        still recommended, as they stop a flood before it reaches the 017 caps and locks out real customers).
   - [ ] Junk bookings: list them, then cancel by phone. `cancelled_by = 'customer'` and `reminders_off` mean no
         message is sent to the junk number:
     ```sql

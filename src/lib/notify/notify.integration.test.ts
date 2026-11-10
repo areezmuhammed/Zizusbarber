@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { londonToUtc, utcToLondon } from "../time";
@@ -29,7 +30,11 @@ const B = at("12:00");
 const shop = { name: "Zizu's Barbers", phone: "07535 423544", siteUrl: "http://localhost:3000" };
 
 describe.skipIf(!up)("runNotifications (local stack, fake providers)", () => {
-  const clean = () => admin.from("bookings").delete().eq("phone", PHONE);
+  // 017 logs every public booking (md5 of the phone) and counts it even after the booking row is deleted
+  const clean = async () => {
+    await admin.from("bookings").delete().eq("phone", PHONE);
+    await admin.from("public_booking_log").delete().eq("phone_hash", createHash("md5").update(PHONE).digest("hex"));
+  };
   beforeAll(clean);
   afterAll(clean);
 

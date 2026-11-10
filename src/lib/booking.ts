@@ -1,9 +1,9 @@
 import { createClient as createSupabase, type SupabaseClient } from "@supabase/supabase-js";
 
 export type BookingArgs = { serviceId: string; startAt: Date; name: string; phone: string; email?: string };
-export type BookingResult = { ok: true; token: string } | { ok: false; reason: "taken" | "too_many" | "invalid" };
+export type BookingResult = { ok: true; token: string } | { ok: false; reason: "taken" | "too_many" | "busy" | "invalid" };
 
-const REASONS: Record<string, "taken" | "too_many"> = { slot_taken: "taken", too_many_bookings: "too_many" };
+const REASONS: Record<string, "taken" | "too_many" | "busy"> = { slot_taken: "taken", too_many_bookings: "too_many", busy: "busy" };
 
 export async function createBooking(args: BookingArgs, client?: SupabaseClient): Promise<BookingResult> {
   const db = client ?? createSupabase(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
