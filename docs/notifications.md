@@ -25,7 +25,7 @@ Times are shown in Europe/London, e.g. `Tue 4 Nov, 14:20`, with the manage link 
   before sending, then marked `sent` / `failed` / `skipped`. A failed send is retried on later runs, at most 3
   attempts. A crash between send and mark leaves it `pending`: never sent twice. One provider failure never stops
   the run.
-- `skipped`: the phone is not a UK number (`+44` then 9-10 digits; foreign numbers are never texted), or (local script/tests only) console providers were used.
+- `skipped`: an SMS to a phone that is not a UK mobile (`+447` then 9 digits; foreign and landline numbers are never texted; a landline booking with an email gets email instead), or (local script/tests only) console providers were used.
 - Who cancelled is set explicitly: `cancel_booking_by_token` sets `'customer'` (even if an owner is signed in),
   admin `setStatus` sets `'shop'`. Any other cancel that leaves it unset (service role, Supabase dashboard, SQL)
   falls back to `'shop'` via a trigger, so the customer is told rather than turning up to a cancelled slot.

@@ -26,6 +26,8 @@ const H = 3_600_000;
 // A reminder is only due if the booking existed before its window opened (a late booking gets just the confirmation);
 // for the 2h reminder, 30 min before it opened, and never in the same run as the confirmation.
 // changed: the latest booking_changes row not yet notified, SMS. cancelled_by_shop: SMS. Nothing once start has passed.
+// A phone that is not a UK mobile (a landline) gets email in place of every SMS when there is an email; with no email
+// the SMS row is recorded as skipped by runNotifications.
 export function dueNotifications(rows: Booking[], now: Date): Due[] {
   const t = now.getTime();
   const out: Due[] = [];
@@ -33,8 +35,10 @@ export function dueNotifications(rows: Booking[], now: Date): Due[] {
     const start = Date.parse(b.start_at);
     const created = Date.parse(b.created_at);
     if (!(start > t)) continue;
-    const pref: Channel = b.email.trim() ? "email" : "sms";
+    const hasEmail = !!b.email.trim();
+    const pref: Channel = hasEmail ? "email" : "sms";
     const add = (kind: Kind, channel: Channel, changeId: string | null = null) => {
+      if (channel === "sms" && hasEmail && !UK_MOBILE.test(b.phone)) channel = "email";
       const prev = b.notifications.find((n) => n.kind === kind && n.change_id === changeId);
       if (prev && !(prev.status === "failed" && prev.attempts < MAX_ATTEMPTS)) return;
       out.push({ booking: b, kind, changeId, channel });
@@ -122,8 +126,9 @@ export interface NotifyDb {
 }
 export type Summary = { sent: number; failed: number; skipped: number };
 
-// UK mobiles/landlines only (Twilio Geo Permissions are UK-only too): never text a foreign number someone typed in.
-export const UK_E164 = /^\+44\d{9,10}$/;
+// UK mobiles only (Twilio Geo Permissions are UK-only too): never text a foreign number someone typed in, and
+// landlines (01/02/03/08/09) cannot receive SMS. Booking still accepts landlines (create_booking's own regex).
+export const UK_MOBILE = /^\+447\d{9}$/;
 
 // Each row is claimed (inserted) BEFORE sending, so a rerun or a parallel run can never send it twice.
 // A crash between send and finish leaves it 'pending': at most once, never twice.
@@ -138,9 +143,9 @@ export async function runNotifications(o: { db: NotifyDb; email: EmailProvider; 
       if (!id) continue;
       const m = render(d.kind, d.booking, o.shop);
       const p = d.channel === "email" ? o.email : o.sms;
-      if (d.channel === "sms" && !UK_E164.test(d.booking.phone)) {
+      if (d.channel === "sms" && !UK_MOBILE.test(d.booking.phone)) {
         status = "skipped";
-        error = "phone is not a UK number";
+        error = "phone is not a UK mobile";
       } else {
         if (d.channel === "email") await o.email.send({ to: d.booking.email, subject: m.emailSubject, text: m.emailText });
         else await o.sms.send({ to: d.booking.phone, text: m.smsText });
