@@ -12,6 +12,8 @@ describe("privacy notice", () => {
     expect(html).toContain(`${shopConfig.privacy.retentionYears} years after your appointment`);
     expect(html).toContain("ico.org.uk");
     expect(html).toContain("Delete my data");
+    expect(html).toContain("from that booking"); // per-booking erasure; whole-record requests go via the shop
+    expect(html).toContain("calling you back");
     expect(html).toContain(shopConfig.phone);
     expect(html).toContain(shopConfig.address);
   });
@@ -32,7 +34,8 @@ describe("analytics", () => {
     vi.stubEnv("PLAUSIBLE_DOMAIN", "zizusbarbers.com");
     const html = renderToStaticMarkup(<Analytics />);
     expect(html).toContain('data-domain="zizusbarbers.com"');
-    expect(html).toContain('src="https://plausible.io/js/script.js"');
+    expect(html).toContain('src="https://plausible.io/js/script.exclusions.js"');
+    expect(html).toContain('data-exclude="/booking/**, /admin/**, /auth/**"');
   });
   it("cookies page says so when analytics is on", () => {
     vi.stubEnv("PLAUSIBLE_DOMAIN", "zizusbarbers.com");

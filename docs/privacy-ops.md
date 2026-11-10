@@ -1,6 +1,7 @@
 # Privacy operations
 
-UK GDPR erasure and retention for customer bookings. SQL in `supabase/migrations/014_privacy.sql`, tests in
+UK GDPR erasure and retention for customer bookings. SQL in `supabase/migrations/014_privacy.sql` (erasure
+replaced in `016_hardening.sql`), tests in
 `supabase/tests/privacy.sql`. Public wording: `/privacy` and `/cookies` (see `docs/launch-checklist.md` for the
 legal review still needed).
 
@@ -13,16 +14,23 @@ legal review still needed).
 ## Erasure: "Delete my data" (customer booking page)
 
 `/booking/<token>` -> server action `deleteMyData` -> `anonymise_customer_by_token(p_token uuid)`
-(SECURITY DEFINER, `search_path = ''`, executable by anon/authenticated).
+(SECURITY DEFINER, `search_path = ''`, executable by anon/authenticated). Final definition:
+`supabase/migrations/016_hardening.sql`.
 
-For EVERY booking with the same phone as the token's booking:
-- `customer_name = 'Deleted customer'`, `email = ''`, `phone = 'deleted-<8 random hex>'` (random per row: not
-  reversible and the rows cannot be linked back together; `phone` is NOT NULL so it is never blanked);
-- upcoming `pending`/`confirmed` bookings are cancelled with `cancelled_by = 'customer'`, so no shop-cancel
-  notice is sent (and the placeholder phone is not E.164, so nothing could be sent anyway);
-- `cancel_token` is rotated, so every old manage link answers 404;
-- `booking_changes.reason` set to NULL for those bookings (migration 015);
-- the rows themselves stay, so the diary and takings stay correct.
+For ONLY the booking the token belongs to:
+- `customer_name = 'Deleted customer'`, `email = ''`, `phone = 'deleted-<8 random hex>'` (random: not reversible
+  and not linkable; `phone` is NOT NULL so it is never blanked);
+- if it is upcoming (`pending`/`confirmed`, starts in the future) it is cancelled with `cancelled_by = 'customer'`,
+  so no shop-cancel notice is sent (and the placeholder phone is not a UK number, so nothing could be sent anyway);
+- `cancel_token` is rotated, so the old manage link answers 404;
+- `booking_changes.reason` set to NULL and `notifications.error` cleared for that booking;
+- the row itself stays, so the diary and takings stay correct.
+
+Other bookings with the same phone are NOT touched. Phones are not verified, so before 016 a stranger could book
+any slot with a victim's number and then "Delete my data" on their own link to wipe and silently cancel the
+victim's bookings. Erasing everything held about a person is therefore an owner job after verification (below).
+
+Returns `{"ok":true,"anonymised":1}`; an unknown token returns `{"ok":false,"reason":"not_found"}` and reveals nothing.
 
 **Not erased:** copies already held by our processors. Sent SMS (body includes the manage link, recipient number)
 stay in Twilio's message logs (kept until deleted; Twilio redacts/deletes on request or via its API) and sent
@@ -30,15 +38,42 @@ emails stay in Resend's logs (kept for a limited period per Resend's plan/retent
 request, also delete the customer's messages in the Twilio console and Resend dashboard, and check each provider's
 current retention terms before launch (docs/launch-checklist.md).
 
-Returns `{"ok":true,"anonymised":n}`; an unknown token returns `{"ok":false,"reason":"not_found"}` and reveals nothing.
+**Request logs:** Vercel request logs (and any CDN or proxy logs in front of the site) record request paths,
+including `/booking/<token>`. A token links to one customer's booking, so treat these logs as personal data:
+they are kept for the Vercel plan's log retention period (short on Hobby/Pro unless a log drain is added) and
+any log drain must have its own retention set. Analytics never loads on `/booking/*`, `/admin/*` or `/auth/*`.
 
-**Trade-off:** anyone holding a booking link can erase that phone number's bookings. Accepted: the link is a bearer
-credential sent only to the customer (it can already cancel the booking), and erasure loses no diary data.
+## Erasure: whole customer (owner, after verification)
 
-Requests by phone or email instead (no link): the owner can do the same in the SQL editor:
-```sql
-select anonymise_customer_by_token(cancel_token) from bookings where phone = '+447...' limit 1;
-```
+When someone asks (by phone, email or in the shop) to delete everything held about them:
+
+1. Verify it is them: call them back on the phone number the bookings were made with. Do not act on an email or
+   a message from another number alone.
+2. In the Supabase SQL editor, look first (read only; replace the number, stored form `+44...`):
+   ```sql
+   select id, customer_name, start_at, status from bookings where phone = '+447...' order by start_at;
+   ```
+3. Erase. The block below is a dry run by default (`v_apply := false` rolls back); change it to `true` only when
+   the list from step 2 is the right person:
+   ```sql
+   do $$
+   declare
+     v_phone text := '+447...';   -- the verified number
+     v_apply boolean := false;    -- dry run: set true to keep the changes
+     n int := 0;
+     t uuid;
+   begin
+     for t in select cancel_token from public.bookings where phone = v_phone loop
+       perform public.anonymise_customer_by_token(t);
+       n := n + 1;
+     end loop;
+     raise notice '% booking(s) anonymised for %', n, v_phone;
+     if not v_apply then raise exception 'dry run: rolled back (set v_apply := true to keep)'; end if;
+   end $$;
+   ```
+   Each booking gets the same treatment as "Delete my data" (upcoming ones are cancelled as `customer`, so no
+   shop-cancel message is sent: tell the customer yourself that those appointments are cancelled).
+4. Delete their messages in Twilio and Resend (see "Not erased" above). Reply within one month.
 
 ## Stopping reminders (objection)
 

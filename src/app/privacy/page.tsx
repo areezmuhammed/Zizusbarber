@@ -81,10 +81,12 @@ export default function PrivacyPage() {
         <li>get your details in a common electronic format to take elsewhere (data portability).</li>
       </ul>
       <p>
-        The quickest way to delete your details is the <strong className="font-medium text-foreground">Delete my data</strong>{" "}
-        button on your booking page (the link in your confirmation message). It removes your name, phone number and email
-        from all your bookings and cancels any upcoming ones. For anything else, call {phone} or email{" "}
-        <a href={`mailto:${email}`}>{email}</a>. We will reply within one month.
+        To delete the details on one booking, use the{" "}
+        <strong className="font-medium text-foreground">Delete my data</strong> button on that booking&apos;s page (the
+        link in your confirmation message). It removes your name, phone number and email from that booking and cancels
+        it if it is still upcoming. To delete everything we hold about you, or for any other request, call {phone} or
+        email <a href={`mailto:${email}`}>{email}</a>. Before deleting all your bookings we check it is you by calling
+        you back on the phone number they were made with. We will reply within one month.
       </p>
       <p>
         If you are unhappy with how we have handled your data, you can complain to the Information Commissioner&apos;s

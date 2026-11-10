@@ -32,7 +32,7 @@ export async function cancelBookingByToken(token: string): Promise<CancelResult>
   return data as CancelResult;
 }
 
-// Right to erasure: anonymises every booking on this booking's phone and rotates their tokens (014_privacy.sql).
+// Right to erasure: anonymises ONLY this token's booking and rotates its token (016_hardening.sql).
 export async function eraseCustomerByToken(token: string): Promise<EraseResult> {
   if (!isUuid(token)) return { ok: false, reason: "not_found" };
   const { data, error } = await db().rpc("anonymise_customer_by_token", { p_token: token });
