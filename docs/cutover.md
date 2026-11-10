@@ -1,5 +1,9 @@
 # Deploy and domain cutover runbook
 
+> **WARNING: accounts.** Use NEW Supabase/Vercel projects created under the owner's own accounts. Never use any
+> other company or personal account's Supabase project; do not run `supabase link` against an existing project.
+> The only `supabase link` in this runbook (B) is to the brand-new project created in the owner's org in B.
+
 Zizu's Barbers (Sheffield). Written for a developer new to the project. Work top to bottom; tick each box.
 Legal / ICO / copy items live in `docs/launch-checklist.md` and are referenced, not repeated, here. Notification
 internals: `docs/notifications.md`. Erasure/retention: `docs/privacy-ops.md`.
@@ -52,14 +56,14 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
       `npx supabase link --project-ref <project-ref>` (ref is in the dashboard URL / Project Settings).
 - [ ] Apply migrations: `npx supabase db push`.
 
-  Migration numbering is non-contiguous: `001`-`005` then `007`-`015` (there is **no 006**; this is expected).
+  Migration numbering is non-contiguous: `001`-`005` then `007`-`016` (there is **no 006**; this is expected).
   On a FRESH production project `db push` applies all of them in filename order, which works. `--include-all` is only
   needed on a database that already applied later migrations out of order (not the case for a new project).
   Do not run `seed.sql` on production (it is local-only sample data, see "Seed" below).
 
   | File | What it does |
   |---|---|
-  | `001_schema.sql` | Tables: owners, barbers, services, opening_hours, closures, bookings (no-overlap exclusion constraint), shop_status, gallery, settings |
+  | `001_schema.sql` | Tables: owners, barbers, services, opening_hours, closures, bookings (no-overlap exclusion constraint), booking_changes, shop_status, gallery |
   | `002_rls.sql` | `is_owner()` and row-level security on every table |
   | `003_booking_rpc.sql` | `create_booking` RPC (hours/overlap checks, returns cancel token) |
   | `004_extend.sql` | `extend_booking` (owner +10 min; pushes later bookings, rejects past closing) |
@@ -73,13 +77,14 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
   | `013_cancelled_by_explicit.sql` | Who cancelled is set explicitly (customer vs shop); trigger fallback to shop |
   | `014_privacy.sql` | `anonymise_customer_by_token`, `anonymise_old_bookings`, daily `anonymise-old-bookings` cron job |
   | `015_reminders_opt_out.sql` | `bookings.reminders_off`, `set_reminders_off_by_token`, scrub `booking_changes.reason` |
+  | `016_hardening.sql` | Erasure by token = that booking only; `create_booking` UK-phone/length/90-day/3-per-phone limits; `get_busy` 31-day clamp; the `shop_status` row; lookup indexes |
 
 - [ ] Confirm: `npx supabase migration list` shows every file applied (Local and Remote columns match).
 - [ ] Seed (production data by hand, not `seed.sql`): in the dashboard SQL editor or the owner's admin (Settings),
-      create the barber, the services (names, prices, durations), opening hours and shop_status rows. `supabase/seed.sql`
+      create the barber, the services (names, prices, durations) and opening hours (the single `shop_status` row is created by migration 016). `supabase/seed.sql`
       is the template: copy its statements, but fix the placeholders first (durations, 09:30 vs 10:00, "Hair Cut and Designs"
       price; see E3). A row in `barbers` is required or booking fails. **verify** the exact required rows against
-      `supabase/seed.sql` (barber, services, opening_hours, one `shop_status` row).
+      `supabase/seed.sql` (barber, services, opening_hours; check `select count(*) from shop_status` = 1).
 - [ ] Owner login user: Dashboard -> Authentication -> Users -> **Invite user** (or Add user) with the owner's
       email. Copy the new user's UUID. Then in the SQL editor:
   ```sql
@@ -115,6 +120,27 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
   and `anonymise-old-bookings`.
 - [ ] Copy for D: Project Settings -> API: Project URL and the **anon (public) key**. Do NOT copy the service role
       key anywhere except (if ever needed) Supabase itself.
+
+- [ ] **Abuse limits (anonymous booking and SMS cost).** Booking is public and every booking can send an SMS billed
+      to the owner. The database already refuses non-UK phones, bookings more than 90 days ahead and a 4th upcoming
+      booking per phone (`016_hardening.sql`), and the notify job only texts `+44` numbers. Also:
+  - [ ] Twilio -> Messaging -> Settings -> **Geo permissions**: allow **United Kingdom only** (blocks SMS pumping to
+        premium foreign numbers even if a bad number gets in).
+  - [ ] Twilio -> Billing / Usage -> **usage trigger / spend alert** (e.g. email at GBP 10 per day and GBP 30 per
+        month); consider auto-recharge OFF so spend is capped by the balance (**verify** current Twilio menu names).
+  - [ ] Vercel -> Project -> Firewall -> **rate limit rule** on `POST /book` (server actions post to the page),
+        e.g. 10 requests per minute per IP, action Deny/429 (**verify** availability on the plan).
+  - [ ] Supabase -> Project Settings -> API / Auth rate limits: keep the defaults or lower them; the anon key is
+        public, so `create_booking` can also be called directly on the REST API (the database limits above still apply).
+  - [ ] Junk bookings: list them, then cancel by phone. `cancelled_by = 'customer'` and `reminders_off` mean no
+        message is sent to the junk number:
+    ```sql
+    select id, customer_name, phone, start_at from bookings
+    where phone = '+44...' and status in ('pending', 'confirmed') and start_at > now() order by start_at;
+
+    update bookings set status = 'cancelled', cancelled_by = 'customer', reminders_off = true
+    where phone = '+44...' and status in ('pending', 'confirmed') and start_at > now();
+    ```
 
 ---
 
@@ -222,7 +248,7 @@ developer's own phone number/email for anything that sends.
 Nameservers stay at GoDaddy. Only two records change.
 
 - [ ] F1. Export the current zone: GoDaddy -> DNS -> Manage Zones (or domain DNS page) -> export/copy the zone file; also take screenshots. Store with the runbook. This is the rollback source.
-- [ ] F2. At least 24 h before: lower the TTL of the apex `A @` and `CNAME www` to 300 seconds. (`docs/launch-checklist.md` says 600; 300 is fine. Wait for the OLD TTL to expire first.)
+- [ ] F2. At least 24 h before: lower the TTL of the apex `A @` and `CNAME www` to 300 seconds. (Wait for the OLD TTL to expire first.)
 - [ ] F3. In Vercel: Project -> Settings -> Domains -> add `zizusbarbers.com` and `www.zizusbarbers.com`. Choose ONE canonical host and redirect the other to it (the app does not do this; `next.config.ts` notes it). Vercel then shows the exact records to create. Typically:
       `A  @    76.76.21.21` and `CNAME  www  cname.vercel-dns.com`.
       **Verify in the Vercel dashboard; these values may have changed.** Use what Vercel shows.
@@ -270,7 +296,7 @@ Nameservers stay at GoDaddy. Only two records change.
     select * from notifications where status = 'failed' order by created_at desc limit 20;
     select * from notifications where status = 'pending' and created_at < now() - interval '10 minutes';
     ```
-  - Vercel -> Logs/Analytics; Resend and Twilio dashboards for bounces/spend alerts (set a Twilio usage alert).
+  - Vercel -> Logs/Analytics; Resend and Twilio dashboards for bounces/spend alerts (the Twilio usage alert and UK-only geo permissions are set in B).
 - [ ] Backups: Supabase Pro keeps daily backups (7 days, **verify**). Restore is a dashboard operation (Database -> Backups); a restore reverts all data since, including bookings and any erasures (re-run erasures after a restore; see `docs/privacy-ops.md`). Consider a monthly `npx supabase db dump --data-only` stored by the owner (**verify** it works against the linked project).
 - [ ] **Rollback plan**: if the site fails after cutover, in GoDaddy restore the old apex `A` and `www` records from the F1 export (TTL 300 makes this effective in minutes), leave everything else alone. Bookings made on the new site in the meantime stay in Supabase; export them before retrying. Because the old site was kept live, customers can still book there.
 - [ ] **Handover**:

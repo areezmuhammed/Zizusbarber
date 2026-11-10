@@ -27,28 +27,36 @@ Remove it (`DRAFT` in `src/components/LegalPage.tsx`) only after:
 - [ ] Function secrets set (`CRON_SECRET`, `SITE_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `TWILIO_*`).
 - [ ] `npx supabase functions deploy notify`, then call it once with the `x-cron-secret` header and expect a JSON summary.
 - [ ] Vault secrets `notify_url` and `cron_secret` created.
+- [ ] Twilio Geo Permissions: United Kingdom only.
+- [ ] Twilio spend/usage alert set (daily and monthly), auto-recharge off or capped.
+- [ ] Vercel Firewall rate-limit rule on `POST /book`; Supabase API/Auth rate limits reviewed.
+- [ ] Owner knows the junk-booking bulk-cancel SQL (`docs/cutover.md`, B "Abuse limits").
 
 ## Supabase and Vercel
 
-- [ ] Supabase Pro plan (daily backups); `npx supabase db push` applies all migrations including `014_privacy.sql`.
+- [ ] NEW Supabase and Vercel projects under the owner's own accounts only (never another company's or a personal
+      project; no `supabase link` to an existing project). See the warning at the top of `docs/cutover.md`.
+- [ ] Supabase Pro plan (daily backups); `npx supabase db push` applies all migrations up to `016_hardening.sql`.
 - [ ] Supabase Auth: Site URL = production URL; redirect allow-list includes `https://zizusbarbers.com/auth/callback`.
 - [ ] Vercel: paid plan (commercial use); env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
       `NEXT_PUBLIC_SITE_URL=https://zizusbarbers.com` (also used for `metadataBase`, so og:image URLs are absolute).
 - [ ] Optional analytics (off by default, cookieless, so no banner): set `PLAUSIBLE_DOMAIN=zizusbarbers.com` and,
-      for a self-hosted/proxied script, `PLAUSIBLE_SRC`. Read at build time: redeploy after changing. The cookie notice then mentions Plausible automatically.
+      for a self-hosted/proxied script, `PLAUSIBLE_SRC` (must be the `script.exclusions.js` variant: the app passes
+      `data-exclude` for `/booking/**`, `/admin/**`, `/auth/**`, and only public pages load the script; **verify** in Plausible that no
+      `/booking/` path is ever recorded). Read at build time: redeploy after changing. The cookie notice then mentions Plausible automatically.
       Nothing is tracked while unset.
 
 ## DNS cutover (GoDaddy)
 
 - [ ] Export the current zone file first (backup).
-- [ ] A day before: lower the TTL of `A @` and `CNAME www` to 600s.
+- [ ] A day before: lower the TTL of `A @` and `CNAME www` to 300s (same as `docs/cutover.md` F2).
 - [ ] Change ONLY `A @` and `CNAME www` to the Vercel values. Leave MX, SPF/TXT and every other record alone.
 - [ ] www vs non-www: pick one canonical host in Vercel (Domains -> redirect the other). The app does not do it.
 - [ ] After propagation: HTTPS works on both hosts, one redirects to the other, email still arrives.
 
 ## SEO
 
-- [ ] Old URLs: 308 redirects are in `src/lib/redirects.ts` (`/services`, `/gallery`, `/contact`, `/booking`, ...).
+- [ ] Old URLs: 301 (permanent) redirects are in `src/lib/redirects.ts` (`/services`, `/gallery`, `/contact`, `/booking`, ...).
       Check the old site's real paths (Search Console, analytics, Google results) and add any missing ones.
 - [ ] Google Search Console: verify the domain, submit `https://zizusbarbers.com/sitemap.xml`.
 - [ ] Google Business Profile: update the "Book" / website link to `https://zizusbarbers.com/book`; check name,

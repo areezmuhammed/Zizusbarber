@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@/components/Analytics";
 import { Gallery } from "@/components/Gallery";
 import { Hero } from "@/components/Hero";
 import { Hours } from "@/components/Hours";
@@ -41,6 +42,7 @@ export default function Home() {
         <SiteFooter />
       </main>
       <StickyBar />
+      <Analytics />
     </>
   );
 }

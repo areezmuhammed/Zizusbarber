@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
+import { Analytics } from "@/components/Analytics";
 import { BookingSheet } from "@/components/BookingSheet";
 import { openDays } from "@/lib/booking-form";
 import { getClosures, getHours, getServices } from "@/lib/shop-data";
@@ -35,6 +36,7 @@ export default function BookPage() {
       <Suspense fallback={<p className="p-5 text-muted-foreground">Loading services…</p>}>
         <Booking />
       </Suspense>
+      <Analytics />
     </main>
   );
 }

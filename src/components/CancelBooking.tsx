@@ -35,7 +35,7 @@ export function CancelBooking({ token }: { token: string }) {
   return (
     <div role="group" aria-label="Confirm cancellation" className="grid gap-2">
       <p className="text-sm">Cancel this appointment?</p>
-      <button type="button" onClick={cancel} disabled={pending} className={`${btn} bg-destructive text-white`}>
+      <button type="button" onClick={cancel} disabled={pending} className={`${btn} bg-destructive text-background`}>
         {pending ? "Cancelling…" : "Yes, cancel it"}
       </button>
       <button type="button" onClick={() => setConfirming(false)} disabled={pending} className={`${btn} border border-border`}>

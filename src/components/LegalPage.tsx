@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Analytics } from "./Analytics";
 import { SiteFooter } from "./SiteFooter";
 import { shopConfig } from "../../shop.config";
 
@@ -24,6 +25,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
         </div>
       </main>
       <SiteFooter />
+      <Analytics />
     </>
   );
 }

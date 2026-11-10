@@ -50,7 +50,7 @@ test("home footer links to privacy and cookies", async ({ page }) => {
   await expect(page.getByRole("navigation", { name: "Legal" }).getByRole("link", { name: "Privacy" })).toBeVisible();
 });
 
-test("Delete my data needs a confirm, then the link stops working", async ({ page }) => {
+test("Delete my data needs a confirm, erases only that booking, then the link stops working", async ({ page }) => {
   const day = 86400000;
   const a = await insert(new Date(Date.now() + 20 * day + Math.floor(Math.random() * 3600000)));
   const b = await insert(new Date(Date.now() + 21 * day + Math.floor(Math.random() * 3600000)));
@@ -63,12 +63,15 @@ test("Delete my data needs a confirm, then the link stops working", async ({ pag
   const yes = page.getByRole("button", { name: "Yes, delete my data" });
   expect((await yes.boundingBox())!.height).toBeGreaterThanOrEqual(48);
   await yes.click();
-  await expect(page.getByText("Your details have been deleted.")).toBeFocused();
+  await expect(page.getByText("Your details have been deleted from this booking.")).toBeFocused();
 
-  for (const t of [a.cancel_token, b.cancel_token]) expect((await page.goto(`/booking/${t}`))?.status()).toBe(404);
-  const rows = await (await fetch(`${API}/rest/v1/bookings?select=customer_name,phone,email,status,cancelled_by&id=in.(${a.id},${b.id})`, { headers: admin })).json();
-  expect(rows).toHaveLength(2);
-  for (const r of rows) expect(r).toMatchObject({ customer_name: "Deleted customer", email: "", status: "cancelled", cancelled_by: "customer" });
+  expect((await page.goto(`/booking/${a.cancel_token}`))?.status()).toBe(404);
+  // b shares the phone but is a separate booking: phones are unverified, so it must survive (C1)
+  expect((await page.goto(`/booking/${b.cancel_token}`))?.status()).toBe(200);
+  const get = async (id: string) =>
+    (await (await fetch(`${API}/rest/v1/bookings?select=customer_name,phone,email,status,cancelled_by&id=eq.${id}`, { headers: admin })).json())[0];
+  expect(await get(a.id)).toMatchObject({ customer_name: "Deleted customer", email: "", status: "cancelled", cancelled_by: "customer" });
+  expect(await get(b.id)).toMatchObject({ customer_name: "E2E Erase", phone: PHONE, email: "erase@example.test", status: "confirmed" });
 });
 
 test("Stop reminder messages turns reminders off for that booking", async ({ page }) => {
@@ -81,6 +84,21 @@ test("Stop reminder messages turns reminders off for that booking", async ({ pag
   await expect(page.getByRole("button", { name: "Stop reminder messages" })).toHaveCount(0);
   const [row] = await (await fetch(`${API}/rest/v1/bookings?select=reminders_off,status&id=eq.${a.id}`, { headers: admin })).json();
   expect(row).toEqual({ reminders_off: true, status: "confirmed" });
+});
+
+test("analytics loads only on public pages, never on booking links, admin or auth", async ({ page }) => {
+  // playwright.config.ts turns analytics on for the e2e server (empty inline script)
+  const a = await insert(new Date(Date.now() + 23 * 86400000 + Math.floor(Math.random() * 3600000)));
+  const script = page.locator("script[data-domain]");
+  for (const p of ["/", "/book", "/privacy", "/cookies"]) {
+    await page.goto(p);
+    await expect(script, p).toHaveCount(1);
+    await expect(script, p).toHaveAttribute("data-exclude", "/booking/**, /admin/**, /auth/**");
+  }
+  for (const p of [`/booking/${a.cancel_token}`, "/admin/login", "/auth/callback"]) {
+    await page.goto(p);
+    await expect(script, p).toHaveCount(0);
+  }
 });
 
 test("public pages set no cookies", async ({ page, context }) => {
