@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(32);
 
 create temp table svc as select id from services where name = 'Hair Cut';
 -- Ann has three bookings on one phone (past done, future confirmed, future-but-another-token); Bob shares nothing.
@@ -33,27 +33,50 @@ values ('00000000-0000-0000-0000-000000001601', 'confirmation', 'sms', 'failed',
 
 set local role anon;
 select is(anonymise_customer_by_token('00000000-0000-0000-0000-00000000ffff'), '{"ok":false,"reason":"not_found"}'::jsonb, 'unknown token: not_found');
-select is(anonymise_customer_by_token('00000000-0000-0000-0000-000000001612'), '{"ok":true,"anonymised":3}'::jsonb, 'anon can erase by token; all 3 rows on that phone');
+select is(anonymise_customer_by_token('00000000-0000-0000-0000-000000001612'), '{"ok":true,"anonymised":1}'::jsonb, 'anon can erase by token; only that booking');
 select is((select count(*)::int from bookings), 0, 'anon still cannot read bookings');
 select is((select count(*)::int from get_booking_by_token('00000000-0000-0000-0000-000000001612')), 0, 'old link no longer works');
 select is(anonymise_customer_by_token('00000000-0000-0000-0000-000000001612'), '{"ok":false,"reason":"not_found"}'::jsonb, 'old token cannot be reused');
+select is((select count(*)::int from get_booking_by_token('00000000-0000-0000-0000-000000001613')), 1, 'same-phone booking link still works');
 reset role;
 
-select is((select count(*)::int from bookings where id between '00000000-0000-0000-0000-000000001601' and '00000000-0000-0000-0000-000000001603'
-  and customer_name = 'Deleted customer' and email = '' and phone ~ '^deleted-[0-9a-f]{8}$'), 3, 'name, phone and email anonymised on all three');
-select is((select count(distinct phone)::int from bookings where customer_name = 'Deleted customer'
-  and id between '00000000-0000-0000-0000-000000001601' and '00000000-0000-0000-0000-000000001603'), 3, 'placeholders are not linkable');
-select is((select count(*)::int from bookings where cancel_token in ('00000000-0000-0000-0000-000000001611',
-  '00000000-0000-0000-0000-000000001612', '00000000-0000-0000-0000-000000001613')), 0, 'every token rotated');
-select is((select status from bookings where id = '00000000-0000-0000-0000-000000001601'), 'done', 'past booking kept as is');
-select is((select start_at from bookings where id = '00000000-0000-0000-0000-000000001601')::date, (now() - interval '10 days')::date, 'time slot kept');
-select is((select string_agg(status || '/' || cancelled_by, ',' order by id) from bookings
-  where id in ('00000000-0000-0000-0000-000000001602', '00000000-0000-0000-0000-000000001603')),
-  'cancelled/customer,cancelled/customer', 'future bookings cancelled by the customer (no shop-cancel notice)');
-select is((select error from notifications where booking_id = '00000000-0000-0000-0000-000000001601'), null, 'notification error text cleared');
+select is((select customer_name || '|' || email || '|' || (phone ~ '^deleted-[0-9a-f]{8}$')::text from bookings
+  where id = '00000000-0000-0000-0000-000000001602'), 'Deleted customer||true', 'name, phone and email anonymised on the token booking');
+select is((select count(*)::int from bookings where cancel_token = '00000000-0000-0000-0000-000000001612'), 0, 'token rotated');
+select is((select status || '/' || cancelled_by from bookings where id = '00000000-0000-0000-0000-000000001602'),
+  'cancelled/customer', 'future booking cancelled by the customer (no shop-cancel notice)');
+select is((select string_agg(customer_name || phone || email || status || cancel_token::text, ',' order by id) from bookings
+  where id in ('00000000-0000-0000-0000-000000001601', '00000000-0000-0000-0000-000000001603')),
+  'Ann Smith+447700900111a@x.testdone00000000-0000-0000-0000-000000001611,'
+  || 'A. Smith+447700900111confirmed00000000-0000-0000-0000-000000001613', 'other bookings on the same phone UNTOUCHED');
+select is((select error from notifications where booking_id = '00000000-0000-0000-0000-000000001601'), 'to +447700900111 rejected',
+  'same-phone notification untouched');
 select is((select customer_name || phone || email from bookings where id = '00000000-0000-0000-0000-000000001604'),
   'Bob Jones+447700900222b@x.test', 'other customers untouched');
 select is((select status from bookings where id = '00000000-0000-0000-0000-000000001604'), 'confirmed', 'other customer still booked');
+
+-- erasing a past booking keeps its status and slot, clears its notification error
+set local role anon;
+select is(anonymise_customer_by_token('00000000-0000-0000-0000-000000001611'), '{"ok":true,"anonymised":1}'::jsonb, 'erase a past booking');
+reset role;
+select is((select status || customer_name from bookings where id = '00000000-0000-0000-0000-000000001601'), 'doneDeleted customer', 'past booking kept as done');
+select is((select start_at from bookings where id = '00000000-0000-0000-0000-000000001601')::date, (now() - interval '10 days')::date, 'time slot kept');
+select is((select error from notifications where booking_id = '00000000-0000-0000-0000-000000001601'), null, 'notification error text cleared');
+select is((select customer_name || status from bookings where id = '00000000-0000-0000-0000-000000001603'), 'A. Smithconfirmed', 'still untouched');
+
+-- ATTACK: a stranger books with the victim's (unverified) phone, then erases their own booking.
+insert into bookings (id, barber_id, service_id, customer_name, phone, email, start_at, end_at, status, cancel_token) values
+  ('00000000-0000-0000-0000-00000000160a', '00000000-0000-0000-0000-000000000001', (select id from svc), 'Victim Vic', '+447700900777', 'v@x.test',
+   '2031-02-01 10:00+00', '2031-02-01 10:30+00', 'confirmed', '00000000-0000-0000-0000-00000000161a'),
+  ('00000000-0000-0000-0000-00000000160b', '00000000-0000-0000-0000-000000000001', (select id from svc), 'Mallory', '+447700900777', '',
+   '2031-02-02 10:00+00', '2031-02-02 10:30+00', 'confirmed', '00000000-0000-0000-0000-00000000161b');
+set local role anon;
+select is(anonymise_customer_by_token('00000000-0000-0000-0000-00000000161b'), '{"ok":true,"anonymised":1}'::jsonb, 'attacker erases own booking');
+select is((select status || '|' || first_name from get_booking_by_token('00000000-0000-0000-0000-00000000161a')), 'confirmed|Victim',
+  'attack: victim booking still confirmed and its link still works');
+reset role;
+select is((select customer_name || phone || email || status from bookings where id = '00000000-0000-0000-0000-00000000160a'),
+  'Victim Vic+447700900777v@x.testconfirmed', 'attack: victim personal data untouched');
 
 -- retention
 select ok(not has_function_privilege('anon', 'anonymise_old_bookings(interval)', 'execute'), 'anon cannot run retention');

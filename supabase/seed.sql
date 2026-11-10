@@ -15,4 +15,4 @@ insert into services (name, price_pence, duration_min, sort) values
 insert into opening_hours (weekday, open_local, close_local)
 select d, '09:30', '20:00' from unnest(array[0,2,3,4,5,6]) d;
 
-insert into shop_status (state) values ('closed');
+insert into shop_status (state) values ('closed') on conflict (id) do nothing; -- 016 already creates the row
