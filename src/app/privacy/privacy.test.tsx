@@ -14,6 +14,8 @@ describe("privacy notice", () => {
     expect(html).toContain("Delete my data");
     expect(html).toContain("from that booking"); // per-booking erasure; whole-record requests go via the shop
     expect(html).toContain("calling you back");
+    expect(html).toContain("anti-abuse record"); // 017: hashed phone + time, 24 hours
+    expect(html).toContain("for 24 hours");
     expect(html).toContain(shopConfig.phone);
     expect(html).toContain(shopConfig.address);
   });

@@ -1,5 +1,5 @@
 begin;
-select plan(20);
+select plan(29);
 
 -- 017: public (non-owner) create_booking is capped at 5 bookings created per phone per 24h (cancelled ones count,
 -- so cancel-and-rebook cannot text one number forever) and 20 bookings created per hour shop-wide ('busy').
@@ -83,6 +83,27 @@ reset role;
 select is((select count(*)::int from public_booking_log where phone_hash like '+%'), 0, 'no raw phone numbers stored');
 set local role anon;
 select is(public.t_err('select count(*) from public.public_booking_log'), 'permission denied for table public_booking_log', 'anon cannot read the log');
+reset role;
+
+-- (6) erase-and-rebook replay: erasing a booking does not reset the per-phone cap (the hash row survives)
+delete from public_booking_log; -- clear the hourly window used above
+create temp table er (tok text);
+grant all on er to anon;
+set local role anon;
+insert into er select cancel_token from create_booking((select id from svc), public.t_at('10:30'), 'Abuse test', '+447700900610', '');
+select is((anonymise_customer_by_token((select tok::uuid from er)) ->> 'ok'), 'true', 'erased the booking');
+select is(public.t_cycle('11:30', '+447700900610'), 'true', 'rebook 2 + cancel after erase');
+select is(public.t_cycle('12:30', '+447700900610'), 'true', 'rebook 3 + cancel after erase');
+select is(public.t_cycle('13:30', '+447700900610'), 'true', 'rebook 4 + cancel after erase');
+select is(public.t_err(public.t_book('14:30', '+447700900610')), null, '5th created incl. the erased one');
+select is(public.t_err(public.t_book('15:30', '+447700900610')), 'too_many_bookings', '6th rejected: the erased booking still counts');
+reset role;
+select is((select count(*)::int from public_booking_log where phone_hash = md5('+447700900610')), 5, 'log row survived erasure');
+
+-- (7) the log is write-locked too
+set local role anon;
+select throws_ok($$insert into public.public_booking_log (phone_hash) values ('x')$$, '42501', null, 'anon cannot insert into the log');
+select throws_ok($$delete from public.public_booking_log$$, '42501', null, 'anon cannot delete from the log');
 reset role;
 
 select * from finish();

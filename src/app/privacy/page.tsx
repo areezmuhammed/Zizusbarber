@@ -30,6 +30,11 @@ export default function PrivacyPage() {
         <li>Your name and phone number.</li>
         <li>Your email address, if you choose to give it.</li>
         <li>Your booking: the service, the date and time, and whether you came.</li>
+        <li>
+          A short-lived anti-abuse record: to stop misuse of online booking we keep a scrambled (hashed) version of
+          the phone number used for a booking, together with the time, for 24 hours, then it is deleted automatically.
+          It is not used for anything else.
+        </li>
       </ul>
       <p>We do not ask for payment details online. You pay in the shop.</p>
 
@@ -44,6 +49,11 @@ export default function PrivacyPage() {
           yours, to keep appointments from being missed. Reminders are only ever about your booking. To stop them,
           press <strong className="font-medium text-foreground">Stop reminder messages</strong> on your booking page, or
           call or email us. We will still tell you if your booking changes or is cancelled.
+        </li>
+        <li>
+          To stop misuse of online booking, such as someone making floods of fake bookings. We do this because it is
+          in our legitimate interests, and our customers&apos;, to prevent misuse and fraud and keep the diary
+          available (legitimate interests). This only uses the 24-hour anti-abuse record described above.
         </li>
       </ul>
       <p>
@@ -67,7 +77,7 @@ export default function PrivacyPage() {
       <h2>How long we keep it</h2>
       <p>
         We keep your booking details for {privacy.retentionYears} years after your appointment, so we have a record
-        of our diary and takings. After that we remove your name, phone number and email automatically.
+        of our diary and takings. After that we remove your name, phone number and email automatically. The 24-hour anti-abuse record is deleted after 24 hours, and the Delete my data button does not remove it because it holds no readable details.
       </p>
 
       <h2>Your rights</h2>

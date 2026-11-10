@@ -144,9 +144,13 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
         month); consider auto-recharge OFF so spend is capped by the balance (**verify** current Twilio menu names).
   - [ ] Vercel -> Project -> Firewall -> **rate limit rule** on `POST /book` (server actions post to the page),
         e.g. 10 requests per minute per IP, action Deny/429 (**verify** availability on the plan).
-  - [ ] Supabase -> Project Settings -> API / Auth rate limits: keep the defaults or lower them; the anon key is
-        public, so `create_booking` can also be called directly on the REST API (the database limits above still apply;
-        still recommended, as they stop a flood before it reaches the 017 caps and locks out real customers).
+  - [ ] Supabase -> Project Settings -> Auth rate limits: keep the defaults or lower them (**verify in the Supabase
+        dashboard**). As far as is known Supabase has no per-IP rate limit on the Data API (PostgREST/RPC); its
+        configurable limits are for Auth, and the anon key is public, so direct `create_booking` calls skip the Vercel
+        firewall. The 017 caps are therefore the ONLY protection against direct RPC abuse; the dashboard and Vercel
+        limits protect the website and auth only. Worst case: 20 public bookings/hour, ~40 texts/hour, ~GBP 35-40/day;
+        the diary fills in about a day and real customers see "busy". So the Twilio spend alert and geo permissions
+        are REQUIRED, and the owner needs the bulk-cancel SQL below. Optional future: a shop-wide daily cap.
   - [ ] Junk bookings: list them, then cancel by phone. `cancelled_by = 'customer'` and `reminders_off` mean no
         message is sent to the junk number:
     ```sql

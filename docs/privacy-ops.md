@@ -106,6 +106,14 @@ Check it: `select * from cron.job where jobname = 'anonymise-old-bookings';` and
 Run by hand: `select anonymise_old_bookings();` (or `anonymise_old_bookings('3 years')`).
 Stop it: `select cron.unschedule('anonymise-old-bookings');`.
 
+## Anti-abuse log (`public_booking_log`)
+
+`017_booking_abuse_limits.sql` adds `public_booking_log`: md5 of the phone plus a timestamp, written only for public (non-owner)
+bookings, RLS locked (no anon/authenticated access) and purged inside `create_booking` once older than 24 hours. It
+drives the per-phone and shop-wide caps. "Delete my data" does not remove it, by design: erasing it would let an
+attacker erase-and-rebook to dodge the cap; it holds only a hash and is gone within 24 hours. Disclosed in the privacy
+notice (legitimate interests: preventing misuse). Clear by hand with `delete from public_booking_log;`.
+
 ## Backups
 
 Anonymised data still exists in database backups until they expire (Supabase Pro keeps daily backups for 7 days).

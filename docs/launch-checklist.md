@@ -15,6 +15,8 @@ Remove it (`DRAFT` in `src/components/LegalPage.tsx`) only after:
       Supabase, Vercel, Resend and Twilio; check where each stores data.
 - [ ] The contact email `shopConfig.email` (bookings@zizusbarbers.com) exists and someone reads it (rights requests,
       one-month reply deadline).
+- [ ] Privacy notice: confirm wording for the 24h anti-abuse hashed-phone record (`public_booking_log`, legitimate
+      interests: preventing misuse/fraud).
 - [ ] Update the "Last updated" dates on both pages when the text changes.
 - [ ] Retention (2 years) agreed with the owner; see `docs/privacy-ops.md`.
 - [ ] Check Twilio and Resend message-log retention and how to delete a customer's messages there (erasure does
@@ -29,8 +31,12 @@ Remove it (`DRAFT` in `src/components/LegalPage.tsx`) only after:
 - [ ] Vault secrets `notify_url` and `cron_secret` created.
 - [ ] Twilio Geo Permissions: United Kingdom only.
 - [ ] Twilio spend/usage alert set (daily and monthly), auto-recharge off or capped.
-- [ ] Vercel Firewall rate-limit rule on `POST /book`; Supabase API/Auth rate limits reviewed (still recommended:
-      the anon key is public, and these stop a flood before it reaches the database caps below).
+- [ ] Vercel Firewall rate-limit rule on `POST /book`; Supabase Auth rate limits reviewed. These protect the website
+      and sign-in only: as far as is known Supabase has no per-IP limit on the Data API (verify in the Supabase
+      dashboard) and direct anon RPC calls skip the Vercel firewall, so the 017 database caps below are the ONLY
+      protection against direct `create_booking` abuse. Worst case: 20 public bookings/hour, ~40 texts/hour,
+      ~GBP 35-40/day, and the diary fills in about a day so real customers see "busy". The Twilio spend alert and UK-only
+      geo permissions are therefore REQUIRED. Owner has the bulk-cancel SQL. Optional future: a shop-wide daily cap.
 - [ ] Owner knows the database caps on public bookings (`017_booking_abuse_limits.sql`, owner bookings exempt):
       5 per phone per 24h (cancelled included) and 20 per hour shop-wide ("busy" message). Constants
       `c_phone_per_day` / `c_shop_per_hour` in `create_booking`; raise them with a new migration, or clear the
