@@ -56,7 +56,7 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
       `npx supabase link --project-ref <project-ref>` (ref is in the dashboard URL / Project Settings).
 - [ ] Apply migrations: `npx supabase db push`.
 
-  Migration numbering is non-contiguous: `001`-`005` then `007`-`017` (there is **no 006**; this is expected).
+  Migration numbering is non-contiguous: `001`-`005` then `007`-`018` (there is **no 006**; this is expected).
   On a FRESH production project `db push` applies all of them in filename order, which works. `--include-all` is only
   needed on a database that already applied later migrations out of order (not the case for a new project).
   Do not run `seed.sql` on production (it is local-only sample data, see "Seed" below).
@@ -78,6 +78,7 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
   | `014_privacy.sql` | `anonymise_customer_by_token`, `anonymise_old_bookings`, daily `anonymise-old-bookings` cron job |
   | `015_reminders_opt_out.sql` | `bookings.reminders_off`, `set_reminders_off_by_token`, scrub `booking_changes.reason` |
   | `016_hardening.sql` | Erasure by token = that booking only; `create_booking` UK-phone/length/90-day/3-per-phone limits; `get_busy` 31-day clamp; the `shop_status` row; lookup indexes |
+  | `018_purge_booking_log.sql` | `purge_public_booking_log()` (service role only) + hourly `purge-public-booking-log` pg_cron job, so the 24h log retention holds even with no bookings |
   | `017_booking_abuse_limits.sql` | `public_booking_log` (md5 of phone + time, kept 24h); public `create_booking` capped at 5 bookings per phone per 24h (cancelled included) and 20 per hour shop-wide |
 
 - [ ] Confirm: `npx supabase migration list` shows every file applied (Local and Remote columns match).
@@ -136,7 +137,7 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
     `supabase/migrations/017_booking_abuse_limits.sql`. To raise them, add a new migration that create-or-replaces
     `create_booking` (copy of 017 with the new numbers) and `db push` it; never edit an applied migration.
     To unblock now, as SQL: `delete from public_booking_log;` (it only holds the last 24h of public bookings).
-  - These caps do not replace the dashboard limits below: keep the Vercel firewall rule and Supabase rate limits.
+  - The dashboard limits below protect the website and sign-in only, not direct RPC calls; still set them.
   Also:
   - [ ] Twilio -> Messaging -> Settings -> **Geo permissions**: allow **United Kingdom only** (blocks SMS pumping to
         premium foreign numbers even if a bad number gets in).
@@ -147,7 +148,7 @@ Who pays: the owner, directly, on their own cards. Rough total about $45-50 / mo
   - [ ] Supabase -> Project Settings -> Auth rate limits: keep the defaults or lower them (**verify in the Supabase
         dashboard**). As far as is known Supabase has no per-IP rate limit on the Data API (PostgREST/RPC); its
         configurable limits are for Auth, and the anon key is public, so direct `create_booking` calls skip the Vercel
-        firewall. The 017 caps are therefore the ONLY protection against direct RPC abuse; the dashboard and Vercel
+        firewall. The caps inside `create_booking` (the 3-upcoming-per-phone cap from 016 and the 017 hourly/24h caps) are the only protection against direct RPC abuse; the dashboard and Vercel
         limits protect the website and auth only. Worst case: 20 public bookings/hour, ~40 texts/hour, ~GBP 35-40/day;
         the diary fills in about a day and real customers see "busy". So the Twilio spend alert and geo permissions
         are REQUIRED, and the owner needs the bulk-cancel SQL below. Optional future: a shop-wide daily cap.

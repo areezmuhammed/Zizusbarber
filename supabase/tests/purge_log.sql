@@ -1,0 +1,14 @@
+begin;
+select plan(5);
+insert into public_booking_log (phone_hash, created_at) values (md5('old'), now() - interval '25 hours'), (md5('new'), now() - interval '23 hours');
+select is(public.purge_public_booking_log(), 1, 'purge removes the 25h-old row');
+select is((select count(*)::int from public_booking_log), 1, 'the 23h-old row stays');
+set local role anon;
+select throws_ok('select public.purge_public_booking_log()', '42501', null, 'anon cannot execute the purge');
+reset role;
+set local role authenticated;
+select throws_ok('select public.purge_public_booking_log()', '42501', null, 'authenticated cannot execute the purge');
+reset role;
+select is((select count(*)::int from cron.job where jobname = 'purge-public-booking-log' and command like '%purge_public_booking_log%'), 1, 'cron job exists');
+select * from finish();
+rollback;

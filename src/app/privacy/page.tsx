@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy notice" updated="9 November 2026">
+    <LegalPage title="Privacy notice" updated="10 November 2026">
       <p>
         This notice explains what we do with your details when you book an appointment with {name}. We keep it short
         because we collect very little.
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
         <li>Your email address, if you choose to give it.</li>
         <li>Your booking: the service, the date and time, and whether you came.</li>
         <li>
-          A short-lived anti-abuse record: to stop misuse of online booking we keep a scrambled (hashed) version of
+          A short-lived anti-abuse record: to stop misuse of online booking we keep a pseudonymised (hashed) form of
           the phone number used for a booking, together with the time, for 24 hours, then it is deleted automatically.
           It is not used for anything else.
         </li>
@@ -77,7 +77,7 @@ export default function PrivacyPage() {
       <h2>How long we keep it</h2>
       <p>
         We keep your booking details for {privacy.retentionYears} years after your appointment, so we have a record
-        of our diary and takings. After that we remove your name, phone number and email automatically. The 24-hour anti-abuse record is deleted after 24 hours, and the Delete my data button does not remove it because it holds no readable details.
+        of our diary and takings. After that we remove your name, phone number and email automatically. The 24-hour anti-abuse record (a pseudonymised, hashed form of the phone number) is deleted automatically after 24 hours; it is not removed by the Delete my data button.
       </p>
 
       <h2>Your rights</h2>
@@ -94,9 +94,9 @@ export default function PrivacyPage() {
         To delete the details on one booking, use the{" "}
         <strong className="font-medium text-foreground">Delete my data</strong> button on that booking&apos;s page (the
         link in your confirmation message). It removes your name, phone number and email from that booking and cancels
-        it if it is still upcoming. To delete everything we hold about you, or for any other request, call {phone} or
+        it if it is still upcoming. To delete everything else we hold about you, or for any other request, call {phone} or
         email <a href={`mailto:${email}`}>{email}</a>. Before deleting all your bookings we check it is you by calling
-        you back on the phone number they were made with. We will reply within one month.
+        you back on the phone number they were made with. The 24-hour anti-abuse record clears itself automatically within 24 hours and is not erased on request. We will reply within one month.
       </p>
       <p>
         If you are unhappy with how we have handled your data, you can complain to the Information Commissioner&apos;s

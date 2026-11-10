@@ -34,7 +34,7 @@ export function DeleteMyData({ token }: { token: string }) {
     return (
       <p ref={ref} tabIndex={-1} role="status" className="rounded-xl border border-border bg-card p-4 text-sm outline-none">
         Your details have been deleted from this booking. If it was upcoming it is cancelled, and this link no longer
-        works. To delete everything else we hold about you, call {shopConfig.phone} or email {shopConfig.email}.
+        works. To delete everything else we hold about you, call {shopConfig.phone} or email {shopConfig.email}. (The 24-hour anti-abuse record clears itself within 24 hours and is not erased on request.)
       </p>
     );
   if (step === "failed")
@@ -53,7 +53,7 @@ export function DeleteMyData({ token }: { token: string }) {
     <div role="group" aria-label="Confirm deleting your data" className="grid gap-2 rounded-xl border border-border p-4">
       <p className="text-sm">
         This removes your name, phone number and email from this booking and cancels it if it is still upcoming. It
-        cannot be undone. Other bookings are not changed: to delete everything we hold about you, call{" "}
+        cannot be undone. Other bookings are not changed: to delete everything else we hold about you, call{" "}
         <a href={`tel:+${intlPhone(shopConfig.phone)}`} className="text-primary underline underline-offset-4">
           {shopConfig.phone}
         </a>{" "}

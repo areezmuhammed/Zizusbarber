@@ -111,8 +111,12 @@ Stop it: `select cron.unschedule('anonymise-old-bookings');`.
 `017_booking_abuse_limits.sql` adds `public_booking_log`: md5 of the phone plus a timestamp, written only for public (non-owner)
 bookings, RLS locked (no anon/authenticated access) and purged inside `create_booking` once older than 24 hours. It
 drives the per-phone and shop-wide caps. "Delete my data" does not remove it, by design: erasing it would let an
-attacker erase-and-rebook to dodge the cap; it holds only a hash and is gone within 24 hours. Disclosed in the privacy
-notice (legitimate interests: preventing misuse). Clear by hand with `delete from public_booking_log;`.
+attacker erase-and-rebook to dodge the cap. It holds an unsalted md5 of the phone, which is pseudonymised personal data
+(UK mobile numbers are enumerable, so do not call it irreversible) and is described that way in the privacy notice
+(legitimate interests: preventing misuse). Purged at three points: opportunistically inside `create_booking`, and by the
+hourly pg_cron job `purge-public-booking-log` (`018_purge_booking_log.sql`, `public.purge_public_booking_log()`,
+service role only). Check: `select * from cron.job where jobname = 'purge-public-booking-log';`. Clear by hand with
+`delete from public_booking_log;`.
 
 ## Backups
 

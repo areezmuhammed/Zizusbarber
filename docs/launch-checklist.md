@@ -33,8 +33,9 @@ Remove it (`DRAFT` in `src/components/LegalPage.tsx`) only after:
 - [ ] Twilio spend/usage alert set (daily and monthly), auto-recharge off or capped.
 - [ ] Vercel Firewall rate-limit rule on `POST /book`; Supabase Auth rate limits reviewed. These protect the website
       and sign-in only: as far as is known Supabase has no per-IP limit on the Data API (verify in the Supabase
-      dashboard) and direct anon RPC calls skip the Vercel firewall, so the 017 database caps below are the ONLY
-      protection against direct `create_booking` abuse. Worst case: 20 public bookings/hour, ~40 texts/hour,
+      dashboard) and direct anon RPC calls skip the Vercel firewall, so the caps inside `create_booking` (the
+      3-upcoming-per-phone cap from 016 and the 017 hourly/24h caps) are the only protection against direct
+      `create_booking` abuse. Worst case: 20 public bookings/hour, ~40 texts/hour,
       ~GBP 35-40/day, and the diary fills in about a day so real customers see "busy". The Twilio spend alert and UK-only
       geo permissions are therefore REQUIRED. Owner has the bulk-cancel SQL. Optional future: a shop-wide daily cap.
 - [ ] Owner knows the database caps on public bookings (`017_booking_abuse_limits.sql`, owner bookings exempt):
@@ -48,7 +49,7 @@ Remove it (`DRAFT` in `src/components/LegalPage.tsx`) only after:
 
 - [ ] NEW Supabase and Vercel projects under the owner's own accounts only (never another company's or a personal
       project; no `supabase link` to an existing project). See the warning at the top of `docs/cutover.md`.
-- [ ] Supabase Pro plan (daily backups); `npx supabase db push` applies all migrations up to `017_booking_abuse_limits.sql`.
+- [ ] Supabase Pro plan (daily backups); `npx supabase db push` applies all migrations up to `018_purge_booking_log.sql`.
 - [ ] Supabase Auth: Site URL = production URL; redirect allow-list includes `https://zizusbarbers.com/auth/callback`.
 - [ ] Vercel: paid plan (commercial use); env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
       `NEXT_PUBLIC_SITE_URL=https://zizusbarbers.com` (also used for `metadataBase`, so og:image URLs are absolute).

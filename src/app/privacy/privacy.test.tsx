@@ -16,6 +16,11 @@ describe("privacy notice", () => {
     expect(html).toContain("calling you back");
     expect(html).toContain("anti-abuse record"); // 017: hashed phone + time, 24 hours
     expect(html).toContain("for 24 hours");
+    const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    expect(text).toMatch(/pseudonymised \(hashed\) form of the phone number[^.]*for 24 hours, then it is deleted automatically/);
+    expect(text).toMatch(/anti-abuse record clears itself automatically within 24 hours and is not erased on request/);
+    expect(text).not.toContain("no readable details");
+    expect(text).not.toContain("cannot be reversed");
     expect(html).toContain(shopConfig.phone);
     expect(html).toContain(shopConfig.address);
   });

@@ -1,5 +1,5 @@
 begin;
-select plan(29);
+select plan(31);
 
 -- 017: public (non-owner) create_booking is capped at 5 bookings created per phone per 24h (cancelled ones count,
 -- so cancel-and-rebook cannot text one number forever) and 20 bookings created per hour shop-wide ('busy').
@@ -99,6 +99,14 @@ select is(public.t_err(public.t_book('14:30', '+447700900610')), null, '5th crea
 select is(public.t_err(public.t_book('15:30', '+447700900610')), 'too_many_bookings', '6th rejected: the erased booking still counts');
 reset role;
 select is((select count(*)::int from public_booking_log where phone_hash = md5('+447700900610')), 5, 'log row survived erasure');
+
+-- a public booking purges expired rows opportunistically
+reset role;
+insert into public_booking_log (phone_hash, created_at) values (md5('stale'), now() - interval '25 hours');
+set local role anon;
+select is(public.t_err(public.t_book('09:30', '+447700900611')), null, 'public booking ok');
+reset role;
+select is((select count(*)::int from public_booking_log where created_at < now() - interval '24 hours'), 0, 'no log rows older than 24h remain after a public booking');
 
 -- (7) the log is write-locked too
 set local role anon;
