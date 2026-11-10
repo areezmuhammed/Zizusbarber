@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { createBooking } from "./booking";
+import { londonToUtc, utcToLondon } from "./time";
 
 // Local dev stack keys only (public demo JWTs); override via env.
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:56321";
@@ -15,19 +16,34 @@ try {
 } catch {}
 if (!up) console.warn(`SKIPPED: local Supabase stack not reachable at ${URL} (run npx supabase start)`);
 
-const start = new Date("2031-01-07T11:00:00Z"); // Tuesday, inside opening hours
+// A Tuesday 8-14 days ahead (inside the public 90-day horizon), London 11:00-14:00: inside opening hours.
+const soon = utcToLondon(new Date()).plus({ days: 8 });
+const DAY = soon.plus({ days: (2 - soon.weekday + 7) % 7 }).toISODate()!;
+const start = londonToUtc(DAY, "11:00")!;
+const later = ["12:00", "13:00", "14:00"].map((t) => londonToUtc(DAY, t)!);
+const PHONE = "+447700900321";
 const admin = createClient(URL, SERVICE);
 
 describe.skipIf(!up)("createBooking (local stack)", () => {
-  const clean = () => admin.from("bookings").delete().eq("start_at", start.toISOString());
+  const clean = () => admin.from("bookings").delete().eq("phone", PHONE);
   beforeAll(clean);
   afterAll(clean);
 
   it("books once, then reports taken", async () => {
     const { data: svc } = await admin.from("services").select("id").eq("name", "Hair Cut").single();
-    const args = { serviceId: svc!.id, startAt: start, name: "Test", phone: "07000" };
+    const args = { serviceId: svc!.id, startAt: start, name: "Test", phone: PHONE };
     const first = await createBooking(args, createClient(URL, ANON));
     expect(first.ok).toBe(true);
     expect(await createBooking(args, createClient(URL, ANON))).toEqual({ ok: false, reason: "taken" });
+  });
+
+  it("rejects non-UK phones and a 4th upcoming booking for one phone", async () => {
+    const { data: svc } = await admin.from("services").select("id").eq("name", "Hair Cut").single();
+    const anon = createClient(URL, ANON);
+    const at = (startAt: Date, phone = PHONE) => createBooking({ serviceId: svc!.id, startAt, name: "Test", phone }, anon);
+    expect(await at(later[0], "+12025550123")).toEqual({ ok: false, reason: "invalid" });
+    expect((await at(later[0])).ok).toBe(true); // 2nd (the first test made the 1st)
+    expect((await at(later[1])).ok).toBe(true); // 3rd
+    expect(await at(later[2])).toEqual({ ok: false, reason: "too_many" });
   });
 });

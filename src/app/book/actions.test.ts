@@ -31,6 +31,11 @@ describe("book action trust boundary", () => {
     expect(createBooking).not.toHaveBeenCalled();
   });
 
+  it("passes too_many through for the friendly message", async () => {
+    createBooking.mockResolvedValue({ ok: false, reason: "too_many" });
+    await expect(book(good)).resolves.toEqual({ error: "too_many" });
+  });
+
   it("passes normalised args to createBooking and maps taken", async () => {
     createBooking.mockResolvedValue({ ok: false, reason: "taken" });
     await expect(book(good)).resolves.toEqual({ error: "taken" });

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  dueNotifications, render, runNotifications, londonTime, MAX_ATTEMPTS,
+  dueNotifications, render, runNotifications, londonTime, MAX_ATTEMPTS, UK_E164,
   type Booking, type Due, type NotifyDb, type Sent,
 } from "./core";
 
@@ -246,6 +246,24 @@ describe("runNotifications", () => {
     expect(email.send).toHaveBeenCalledTimes(1); // logged
     expect(sms.send).not.toHaveBeenCalled();
     expect(store.map((n) => n.status)).toEqual(["skipped", "skipped"]);
+  });
+
+  it("only UK numbers are texted: foreign and malformed numbers are skipped", async () => {
+    const { db, store } = fakeDb([
+      booking({ email: "", phone: "+12025550123" }),
+      booking({ id: "b2", email: "", phone: "+4477009001", cancel_token: "t2" }),
+      booking({ id: "b3", email: "", phone: "+447700900123", cancel_token: "t3" }),
+    ]);
+    const { email, sms } = fakes();
+    expect(await runNotifications({ db, email, sms, now, shop })).toEqual({ sent: 1, failed: 0, skipped: 2 });
+    expect(sms.sent.map((m) => m.to)).toEqual(["+447700900123"]);
+    expect(store.filter((n) => n.status === "skipped").map((n) => n.error)).toEqual(["phone is not a UK number", "phone is not a UK number"]);
+  });
+
+  it("UK_E164 accepts +44 then 9-10 digits only", () => {
+    for (const ok of ["+447700900123", "+441142345678", "+44114234567"]) expect(UK_E164.test(ok)).toBe(true);
+    for (const bad of ["+12025550123", "+33612345678", "07700900123", "+4477009001", "+44770090012345", "deleted-abcdef12"])
+      expect(UK_E164.test(bad)).toBe(false);
   });
 
   it("a failing finish() after a successful send leaves the row claimed, so it is never resent", async () => {

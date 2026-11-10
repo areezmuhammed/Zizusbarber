@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { londonToUtc, utcToLondon } from "../time";
 import { runNotifications, supabaseNotifyDb } from "./core";
 
 // Local dev stack keys only (public demo JWTs); override via env. Providers are fakes: nothing is sent.
@@ -18,8 +19,13 @@ if (!up) console.warn(`SKIPPED: local Supabase stack not reachable at ${URL} (ru
 const admin = createClient(URL, SERVICE, { auth: { persistSession: false } });
 const PHONE = "+447700900555";
 const MAIL = "notify-it@example.test";
-const A = "2031-01-14T11:00:00.000Z"; // Tuesday 11:00 GMT
-const B = "2031-01-14T12:00:00.000Z";
+// A Tuesday 22-28 days ahead (inside the public 90-day horizon, no reminders due yet), London 11:00 and 12:00.
+const ahead = utcToLondon(new Date()).plus({ days: 22 });
+const DAY = ahead.plus({ days: (2 - ahead.weekday + 7) % 7 }).toISODate()!;
+const at = (hhmm: string) => londonToUtc(DAY, hhmm)!.toISOString();
+const label = (iso: string) => utcToLondon(new Date(iso)).toFormat("ccc d LLL, HH:mm");
+const A = at("11:00");
+const B = at("12:00");
 const shop = { name: "Zizu's Barbers", phone: "07535 423544", siteUrl: "http://localhost:3000" };
 
 describe.skipIf(!up)("runNotifications (local stack, fake providers)", () => {
@@ -37,10 +43,10 @@ describe.skipIf(!up)("runNotifications (local stack, fake providers)", () => {
     };
     const a = await book(A, MAIL);
     const b = await book(B, "");
-    const moved = { start: "2031-01-14T11:20:00.000Z", end: "2031-01-14T11:50:00.000Z" };
+    const moved = { start: at("11:20"), end: at("11:50") };
     await admin.from("bookings").update({ start_at: moved.start, end_at: moved.end }).eq("id", a.id);
     const { error: e1 } = await admin.from("booking_changes").insert({
-      booking_id: a.id, old_start: A, old_end: "2031-01-14T11:30:00Z", new_start: moved.start, new_end: moved.end, reason: "test",
+      booking_id: a.id, old_start: A, old_end: at("11:30"), new_start: moved.start, new_end: moved.end, reason: "test",
     });
     expect(e1).toBeNull();
     await admin.from("bookings").update({ status: "cancelled", cancelled_by: "shop" }).eq("id", b.id); // as admin setStatus does
@@ -59,11 +65,11 @@ describe.skipIf(!up)("runNotifications (local stack, fake providers)", () => {
 
     const ours = { mails, texts };
     expect(ours.mails).toHaveLength(1);
-    expect(ours.mails[0].subject).toBe("Booking confirmed: Tue 14 Jan, 11:20");
+    expect(ours.mails[0].subject).toBe(`Booking confirmed: ${label(moved.start)}`);
     expect(ours.mails[0].text).toContain(`http://localhost:3000/booking/${a.cancel_token}`);
     expect(ours.texts.map((t) => t.text).sort()).toEqual([
-      `Zizu's Barbers: sorry, we had to cancel your Hair Cut on Tue 14 Jan, 12:00. Call 07535 423544 or rebook: http://localhost:3000/book`,
-      `Zizu's Barbers: your booking is now Tue 14 Jan, 11:20-11:50. Problem? Call 07535 423544. http://localhost:3000/booking/${a.cancel_token}`,
+      `Zizu's Barbers: sorry, we had to cancel your Hair Cut on ${label(B)}. Call 07535 423544 or rebook: http://localhost:3000/book`,
+      `Zizu's Barbers: your booking is now ${label(moved.start)}-11:50. Problem? Call 07535 423544. http://localhost:3000/booking/${a.cancel_token}`,
     ]);
 
     const { data: rows } = await admin.from("notifications").select("booking_id,kind,channel,status,sent_at").in("booking_id", [a.id, b.id]);

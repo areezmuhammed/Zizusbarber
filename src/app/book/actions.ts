@@ -39,7 +39,7 @@ export async function getTimes(serviceId: string, date: string): Promise<string[
   }).map((d) => d.toISOString());
 }
 
-export type BookResult = { error: "taken" | "invalid" | "details" };
+export type BookResult = { error: "taken" | "too_many" | "invalid" | "details" };
 
 // Typed loosely on purpose: server actions are a public endpoint, so the shape is checked in parseBooking.
 export async function book(input: unknown): Promise<BookResult> {

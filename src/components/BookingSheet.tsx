@@ -7,6 +7,7 @@ import { book, getTimes } from "@/app/book/actions";
 import { validateDetails, type Details } from "@/lib/booking-form";
 import { formatPrice } from "@/lib/format";
 import type { Service } from "@/lib/shop-data";
+import { shopConfig } from "../../shop.config";
 
 const ZONE = "Europe/London";
 const TITLES = ["Choose a service", "Pick a day and time", "Your details", "Check and confirm"];
@@ -23,6 +24,7 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
   const [service, setService] = useState<Service | null>(null);
   const [date, setDate] = useState<string | null>(null);
   const [times, setTimes] = useState<string[] | null>(null);
+  const [timesFailed, setTimesFailed] = useState(false);
   const [start, setStart] = useState<string | null>(null);
   const [details, setDetails] = useState<Details>({ name: "", phone: "", email: "" });
   const [errors, setErrors] = useState<ReturnType<typeof validateDetails>>({});
@@ -37,11 +39,21 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
     moved.current = true;
   }, [step]);
 
+  // A failed fetch shows a retry here instead of throwing to the error page.
+  async function fetchTimes(serviceId: string, d: string) {
+    try {
+      setTimes(await getTimes(serviceId, d));
+    } catch {
+      setTimesFailed(true);
+    }
+  }
+
   function loadTimes(svc: Service, d: string) {
     setDate(d);
     setStart(null);
     setTimes(null);
-    startTransition(async () => setTimes(await getTimes(svc.id, d)));
+    setTimesFailed(false);
+    startTransition(() => fetchTimes(svc.id, d));
   }
 
   function go(next: number) {
@@ -72,6 +84,10 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
     startTransition(async () => {
       const res = await book({ serviceId: service.id, start, ...details });
       // Only reached on failure; success redirects.
+      if (res.error === "too_many") {
+        setNotice(`You already have 3 upcoming bookings, please call us on ${shopConfig.phone} to add more.`);
+        return;
+      }
       if (res.error === "details") {
         const errs = validateDetails(details);
         go(2);
@@ -84,7 +100,9 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
       setNotice(
         res.error === "taken" ? "That slot was just taken. Pick another time." : "That time can no longer be booked. Pick another time.",
       );
-      setTimes(await getTimes(service.id, date));
+      setTimes(null);
+      setTimesFailed(false);
+      await fetchTimes(service.id, date);
     });
   }
 
@@ -160,7 +178,21 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
                 ))}
               </div>
               {!date && <p className="mt-6 text-center text-muted-foreground">Choose a day to see free times.</p>}
-              {date && times === null && <p className="mt-6 text-center text-muted-foreground">Finding free times…</p>}
+              {date && times === null && !timesFailed && (
+                <p className="mt-6 text-center text-muted-foreground">Finding free times…</p>
+              )}
+              {date && timesFailed && (
+                <div role="alert" className="mt-6 grid justify-items-center gap-2 text-center">
+                  <p className="text-muted-foreground">We could not load free times.</p>
+                  <button
+                    type="button"
+                    onClick={() => loadTimes(service, date)}
+                    className={`${target} min-h-12 rounded-full border border-border px-6 font-medium`}
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
               {date && times?.length === 0 && (
                 <p className="mt-6 text-center text-muted-foreground">No free times on this day. Try another.</p>
               )}

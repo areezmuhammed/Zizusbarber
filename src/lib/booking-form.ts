@@ -16,11 +16,14 @@ export function dayHours(date: string, hours: HoursRow[], closures: Closure[]) {
   };
 }
 
+// How far ahead the public may book. create_booking enforces the same 90 days (supabase/migrations/016_hardening.sql).
+export const BOOKING_HORIZON_DAYS = 90;
+
 // London calendar dates (YYYY-MM-DD) of the next `count` open days, starting today. Steps calendar days, never 24h.
 export function openDays(now: Date, count: number, hours: HoursRow[], closures: Closure[]): string[] {
   const out: string[] = [];
   const today = utcToLondon(now).startOf("day");
-  for (let i = 0; out.length < count && i < 90; i++) {
+  for (let i = 0; out.length < count && i < BOOKING_HORIZON_DAYS; i++) {
     const date = today.plus({ days: i }).toISODate()!;
     if (dayHours(date, hours, closures)) out.push(date);
   }

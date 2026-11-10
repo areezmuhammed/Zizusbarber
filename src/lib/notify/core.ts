@@ -122,7 +122,8 @@ export interface NotifyDb {
 }
 export type Summary = { sent: number; failed: number; skipped: number };
 
-const E164 = /^\+[1-9]\d{7,14}$/;
+// UK mobiles/landlines only (Twilio Geo Permissions are UK-only too): never text a foreign number someone typed in.
+export const UK_E164 = /^\+44\d{9,10}$/;
 
 // Each row is claimed (inserted) BEFORE sending, so a rerun or a parallel run can never send it twice.
 // A crash between send and finish leaves it 'pending': at most once, never twice.
@@ -137,9 +138,9 @@ export async function runNotifications(o: { db: NotifyDb; email: EmailProvider; 
       if (!id) continue;
       const m = render(d.kind, d.booking, o.shop);
       const p = d.channel === "email" ? o.email : o.sms;
-      if (d.channel === "sms" && !E164.test(d.booking.phone)) {
+      if (d.channel === "sms" && !UK_E164.test(d.booking.phone)) {
         status = "skipped";
-        error = "phone is not E.164";
+        error = "phone is not a UK number";
       } else {
         if (d.channel === "email") await o.email.send({ to: d.booking.email, subject: m.emailSubject, text: m.emailText });
         else await o.sms.send({ to: d.booking.phone, text: m.smsText });
