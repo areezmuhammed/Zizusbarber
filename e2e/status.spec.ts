@@ -123,3 +123,25 @@ test("a non-owner cannot call the status actions", async ({ browser }) => {
   await owner.context().close();
   await ctx!.close();
 });
+
+test("admin tab bar sits at the bottom, marks the current tab and never scrolls sideways", async ({ browser }) => {
+  const owner = await signedIn(browser, "tabbar", true);
+  for (const width of [320, 390]) {
+    await owner.setViewportSize({ width, height: 800 });
+    for (const [path, current] of [["/admin", "Today"], ["/admin/status", "Status"], ["/admin/settings", "Settings"], ["/admin/gallery", "Gallery"]] as const) {
+      await owner.goto(path);
+      const tabs = owner.getByRole("navigation", { name: "Admin" });
+      const tab = tabs.getByRole("link", { name: current });
+      await expect(tab).toHaveAttribute("aria-current", "page");
+      for (const n of ["Today", "Status", "Settings", "Gallery"].filter((n) => n !== current)) {
+        await expect(tabs.getByRole("link", { name: n })).not.toHaveAttribute("aria-current", "page");
+      }
+      const box = (await tabs.boundingBox())!;
+      expect(box.y + box.height).toBeGreaterThan(800 - 4); // fixed to the bottom edge
+      expect((await tab.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+      await expect(owner.getByRole("button", { name: "Sign out" })).toBeVisible();
+      expect(await owner.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  }
+  await owner.context().close();
+});

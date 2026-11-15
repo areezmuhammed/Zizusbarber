@@ -1,8 +1,7 @@
-import Link from "next/link";
+import { LogOut } from "lucide-react";
 import { signOut } from "../actions";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { NotOwnerError, requireOwner } from "@/lib/auth";
-
-const nav: [string, string?][] = [["Today", "/admin"], ["Status", "/admin/status"], ["Settings", "/admin/settings"], ["Gallery", "/admin/gallery"]];
 
 export default async function AdminShell({ children }: { children: React.ReactNode }) {
   let refused = false;
@@ -26,19 +25,19 @@ export default async function AdminShell({ children }: { children: React.ReactNo
   }
   return (
     <div className="mx-auto min-h-screen max-w-2xl">
-      <nav aria-label="Admin" className="flex flex-wrap items-center gap-2 border-b p-3">
-        {nav.map(([n, href]) =>
-          href ? (
-            <Link key={n} href={href} className="inline-flex min-h-12 items-center rounded px-3 text-sm">{n}</Link>
-          ) : (
-            <span key={n} className="inline-flex min-h-12 items-center rounded px-3 text-sm">{n}</span>
-          ),
-        )}
-        <form action={signOut} className="ml-auto">
-          <button className="min-h-12 rounded border px-3 text-sm">Sign out</button>
+      <header className="flex items-center justify-between gap-3 px-4 pt-3">
+        <p className="font-heading text-2xl leading-none">
+          Zizu&apos;s <span className="text-base text-muted-foreground">for the shop</span>
+        </p>
+        <form action={signOut}>
+          <button className="-mr-2 inline-flex min-h-12 items-center gap-2 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
+            <LogOut aria-hidden className="size-4" />
+            Sign out
+          </button>
         </form>
-      </nav>
-      <div className="p-4">{children}</div>
+      </header>
+      <div className="p-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">{children}</div>
+      <AdminNav />
     </div>
   );
 }
