@@ -10,3 +10,6 @@ export const nationalPhone = (phone: string) =>
 
 // DB `time` values are London wall-clock ("09:30:00"); show as "09:30"
 export const hhmm = (t: string) => t.slice(0, 5);
+
+export const marqueeText = (names: string[]) =>
+  names.map((n) => n.trim()).filter(Boolean).join(" · ");

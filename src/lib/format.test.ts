@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPrice, hhmm, intlPhone, nationalPhone } from "./format";
+import { formatPrice, hhmm, intlPhone, marqueeText, nationalPhone } from "./format";
 
 describe("format", () => {
   it("formats pence as pounds", () => {
@@ -17,5 +17,13 @@ describe("format", () => {
   });
   it("trims seconds from DB times", () => {
     expect(hhmm("09:30:00")).toBe("09:30");
+  });
+});
+
+describe("marqueeText", () => {
+  it("joins trimmed names with a middle dot", () => {
+    expect(marqueeText(["Skin fade", "Beard trim"])).toBe("Skin fade · Beard trim");
+    expect(marqueeText([])).toBe("");
+    expect(marqueeText([" Taper "])).toBe("Taper");
   });
 });

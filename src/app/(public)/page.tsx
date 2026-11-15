@@ -3,6 +3,7 @@ import { Analytics } from "@/components/Analytics";
 import { Gallery } from "@/components/Gallery";
 import { Hero } from "@/components/Hero";
 import { Hours } from "@/components/Hours";
+import { Marquee } from "@/components/marketing/Marquee";
 import { Services } from "@/components/Services";
 import { SiteFooter } from "@/components/SiteFooter";
 import { StickyBar } from "@/components/StickyBar";
@@ -36,6 +37,7 @@ export default function Home() {
       <SalonJsonLd />
       <main className="pb-24">
         <Hero />
+        <Marquee />
         <Services />
         <Gallery />
         <Hours />

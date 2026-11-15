@@ -72,3 +72,9 @@
     font-weight: 400;
   }
 }
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}

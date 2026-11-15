@@ -83,3 +83,11 @@ test("hero has no layout shift", async ({ page }) => {
   );
   expect(cls).toBeLessThan(0.1);
 });
+
+test("marquee is decorative and still under reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.locator("[data-marquee]")).toHaveAttribute("aria-hidden", "true");
+  const name = await page.locator("[data-marquee-track]").evaluate((el) => getComputedStyle(el).animationName);
+  expect(name).toBe("none");
+});
