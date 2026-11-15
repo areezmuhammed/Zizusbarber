@@ -7,5 +7,6 @@ export const firstName = (name: string) => name.trim().split(/\s+/)[0];
 
 export const btn =
   "flex min-h-12 items-center justify-center rounded-xl px-4 text-base font-medium disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+export const panel = "rounded-2xl border border-border bg-card p-4";
 export const field =
   "mt-1.5 block min-h-12 w-full rounded-xl border border-input bg-background px-3 text-base focus-visible:outline-2 focus-visible:outline-primary";

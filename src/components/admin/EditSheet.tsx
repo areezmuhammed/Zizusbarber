@@ -5,7 +5,7 @@ import { changeLength, setReminders, setStatus, type Affected, type LengthResult
 import type { DayBooking } from "@/lib/admin-data";
 import { STATUS_LABEL } from "./BookingRow";
 import { Sheet } from "./Sheet";
-import { btn, field, firstName, range } from "./ui";
+import { btn, field, firstName, panel, range } from "./ui";
 
 const ERRORS: Record<string, string> = {
   forbidden: "Only the shop owner can change bookings.",
@@ -90,8 +90,11 @@ function Actions({ b, onClose }: { b: DayBooking; onClose: () => void }) {
         </button>
       </section>
 
-      <section aria-labelledby="len" className="grid gap-2">
-        <h3 id="len" className="text-sm text-muted-foreground">Running over? Later bookings move up to make room.</h3>
+      <section aria-labelledby="len" className={`${panel} grid gap-3`}>
+        <h3 id="len" className="font-heading text-xl leading-tight">
+          Running over?
+          <span className="mt-1 block font-sans text-sm text-muted-foreground">Later bookings move up to make room.</span>
+        </h3>
         <div className="grid grid-cols-3 gap-2">
           {[5, 10, 15].map((m) => (
             <button key={m} type="button" disabled={pending} onClick={() => resize("add", m)} className={`${btn} border border-primary/60 font-mono text-primary`}>

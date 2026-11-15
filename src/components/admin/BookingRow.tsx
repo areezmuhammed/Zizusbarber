@@ -24,7 +24,15 @@ export function BookingRow({ b, onOpen }: { b: DayBooking; onOpen: () => void })
   const finished = b.status === "done" || b.status === "no_show";
   const phone = nationalPhone(b.phone);
   return (
-    <li className={`border-b border-border ${finished ? "opacity-60" : ""}`}>
+    <li
+      className={`rounded-2xl border px-4 ${
+        finished
+          ? "border-border/60 opacity-60"
+          : b.status === "arrived"
+            ? "border-primary/70 bg-card shadow-[inset_4px_0_0_var(--color-primary)]"
+            : "border-border bg-card"
+      }`}
+    >
       <button
         type="button"
         onClick={onOpen}

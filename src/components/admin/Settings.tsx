@@ -62,7 +62,7 @@ function Services({ services }: { services: SettingsService[] }) {
       <p className="text-sm text-muted-foreground">Order here is the order on the website. Hidden services can’t be booked.</p>
       <ul aria-label="Services" className="grid gap-2">
         {services.map((s, i) => (
-          <li key={s.id} className="rounded-xl border border-border bg-card p-3">
+          <li key={s.id} className="min-w-0 rounded-xl border border-border bg-card p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-lg">{s.name}</p>

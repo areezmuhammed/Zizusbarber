@@ -30,13 +30,15 @@ export function DayView({ date, bookings, services, defaultTime }: {
       </button>
 
       {bookings.length ? (
-        <ul aria-label="Bookings" className="mt-2">
+        <ul aria-label="Bookings" className="mt-2 grid gap-3">
           {bookings.map((b) => (
             <BookingRow key={b.id} b={b} onOpen={() => setOpenId(b.id)} />
           ))}
         </ul>
       ) : (
-        <p className="mt-8 text-center text-muted-foreground">No bookings this day. Add walk-ins and phone bookings above.</p>
+        <p className="mt-2 rounded-2xl border border-dashed border-border px-5 py-10 text-center text-muted-foreground">
+          No bookings this day. Add walk-ins and phone bookings above.
+        </p>
       )}
 
       <EditSheet booking={open} onClose={() => setOpenId(null)} />

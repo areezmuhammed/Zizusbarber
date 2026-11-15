@@ -5,7 +5,7 @@ import { useState } from "react";
 import { bumpCount, saveStatus } from "@/app/admin/status";
 import type { Status } from "@/lib/shop-data";
 import { MAX_NOTE } from "@/lib/status-form";
-import { btn, field } from "./ui";
+import { btn, field, panel } from "./ui";
 
 const STATES = [
   ["open", "Open"],
@@ -16,7 +16,9 @@ const COUNTERS = [
   ["in_shop", "In shop"],
   ["waiting", "Waiting"],
 ] as const;
-const step = `${btn} size-16 border border-border bg-card`;
+// own classes rather than btn: btn's rounded-xl would fight rounded-full
+const step =
+  "grid size-16 shrink-0 place-items-center rounded-full border bg-background disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 export function StatusControls({ initial }: { initial: Status }) {
   const [s, setS] = useState(initial);
@@ -36,7 +38,16 @@ export function StatusControls({ initial }: { initial: Status }) {
 
   return (
     <div className="grid gap-6">
-      <h1 className="font-heading text-3xl leading-tight">Shop status</h1>
+      <div>
+        <h1 className="font-heading text-3xl leading-tight">Shop status</h1>
+        <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <span aria-hidden className="relative flex size-2.5">
+            <span className="absolute inset-0 rounded-full bg-primary motion-safe:animate-ping motion-safe:opacity-60" />
+            <span className="relative size-2.5 rounded-full bg-primary" />
+          </span>
+          Changes show on your website straight away
+        </p>
+      </div>
       <fieldset className="grid grid-cols-3 gap-2">
         <legend className="sr-only">Shop state</legend>
         {STATES.map(([v, label]) => (
@@ -49,22 +60,24 @@ export function StatusControls({ initial }: { initial: Status }) {
           </label>
         ))}
       </fieldset>
-      {COUNTERS.map(([key, label]) => (
-        <div key={key} className="flex items-center justify-between gap-3">
-          <span id={`c-${key}`} className="text-lg">{label}</span>
-          <div className="flex items-center gap-4" role="group" aria-labelledby={`c-${key}`}>
-            <button type="button" aria-label={`${label} minus one`} onClick={() => bump(key, -1)} className={step}>
-              <Minus aria-hidden className="size-6" />
-            </button>
-            <output aria-live="polite" data-testid={`count-${key}`} className="w-12 text-center font-mono text-3xl lining-nums">
-              {s[key]}
-            </output>
-            <button type="button" aria-label={`${label} plus one`} onClick={() => bump(key, 1)} className={step}>
-              <Plus aria-hidden className="size-6" />
-            </button>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {COUNTERS.map(([key, label]) => (
+          <div key={key} role="group" aria-labelledby={`c-${key}`} className={`${panel} grid gap-3`}>
+            <span id={`c-${key}`} className="text-lg">{label}</span>
+            <div className="flex items-center justify-between gap-3">
+              <button type="button" aria-label={`${label} minus one`} onClick={() => bump(key, -1)} className={`${step} border-border`}>
+                <Minus aria-hidden className="size-7" />
+              </button>
+              <output aria-live="polite" data-testid={`count-${key}`} className="min-w-[2ch] text-center font-heading text-7xl leading-none tabular-nums lining-nums">
+                {s[key]}
+              </output>
+              <button type="button" aria-label={`${label} plus one`} onClick={() => bump(key, 1)} className={`${step} border-primary/60 text-primary`}>
+                <Plus aria-hidden className="size-7" />
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
