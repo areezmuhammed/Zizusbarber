@@ -14,7 +14,7 @@ export function ShopIntro() {
           className="aspect-[4/5] w-full object-cover"
         />
         <div>
-          <p className="text-[11px] tracking-[0.3em] text-primary uppercase">The shop</p>
+          <p aria-hidden="true" className="text-[11px] tracking-[0.3em] text-primary uppercase">The shop</p>
           <h2 id="shop-h" className="mt-3 font-heading text-3xl">
             The shop
           </h2>

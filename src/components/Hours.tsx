@@ -52,6 +52,7 @@ export async function Hours() {
           <address className="mt-6 not-italic leading-relaxed">
             <span className="block font-heading text-2xl">{shopConfig.name}</span>
             <span className="block text-muted-foreground">{shopConfig.address}</span>
+            <span className="block font-mono text-sm">{shopConfig.phone}</span>
           </address>
           <div className="mt-4 flex flex-wrap gap-3">
             <a

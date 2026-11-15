@@ -101,5 +101,13 @@ test("visit-us offers directions and call", async ({ page }) => {
   const call = hours.getByRole("link", { name: "Call" });
   await expect(directions).toHaveAttribute("href", shopConfig.mapsUrl);
   await expect(call).toHaveAttribute("href", "tel:+447535423544");
+  await expect(hours).toContainText(shopConfig.phone);
   for (const l of [directions, call]) expect((await l.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+});
+
+test("footer carries the Instagram link", async ({ page }) => {
+  await page.goto("/");
+  const ig = page.locator("footer").getByRole("link", { name: "Instagram" });
+  await expect(ig).toHaveAttribute("href", shopConfig.sameAs[0]);
+  expect((await ig.boundingBox())!.height).toBeGreaterThanOrEqual(48);
 });
