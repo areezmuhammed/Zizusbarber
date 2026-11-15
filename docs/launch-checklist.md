@@ -59,6 +59,10 @@ Remove it (`DRAFT` in `src/components/LegalPage.tsx`) only after:
       `/booking/` path is ever recorded). Read at build time: redeploy after changing. The cookie notice then mentions Plausible automatically.
       Nothing is tracked while unset.
 
+## Photos
+
+- [ ] Replace every `placeholder-*` photo (`docs/photos.md`) and the demo gallery with the owner's real photos
+
 ## DNS cutover (GoDaddy)
 
 - [ ] Export the current zone file first (backup).
