@@ -1,7 +1,7 @@
 import { getImageProps } from "next/image";
 
 export function HeroVisual() {
-  const common = { alt: "", sizes: "100vw" };
+  const common = { alt: "", sizes: "100vw", loading: "eager" as const };
   const {
     props: { srcSet: desktop },
   } = getImageProps({ ...common, src: "/images/brand/placeholder-hero-desktop.webp", width: 1664, height: 936 });
@@ -13,8 +13,7 @@ export function HeroVisual() {
     <>
       <picture>
         <source media="(min-width: 768px)" srcSet={desktop} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img {...img} srcSet={mobile} fetchPriority="high" className="absolute inset-0 size-full object-cover object-[50%_30%]" />
+        <img {...img} srcSet={mobile} alt="" fetchPriority="high" className="absolute inset-0 size-full object-cover object-[50%_30%]" />
       </picture>
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/20" aria-hidden />
       <div

@@ -57,13 +57,13 @@ export async function Hours() {
           <div className="mt-4 flex flex-wrap gap-3">
             <a
               href={shopConfig.mapsUrl}
-              className="inline-flex min-h-12 items-center rounded-sm bg-primary px-6 text-sm font-semibold tracking-wide text-primary-foreground uppercase"
+              className="inline-flex min-h-12 items-center rounded-sm bg-primary px-6 text-sm font-semibold tracking-wide text-primary-foreground uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               Directions
             </a>
             <a
               href={`tel:+${intlPhone(shopConfig.phone)}`}
-              className="inline-flex min-h-12 items-center rounded-sm border border-primary px-6 text-sm font-semibold tracking-wide text-primary uppercase"
+              className="inline-flex min-h-12 items-center rounded-sm border border-primary px-6 text-sm font-semibold tracking-wide text-primary uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               Call
             </a>

@@ -51,6 +51,7 @@ test("hero shows the brand, the art-directed photo and a reachable Book button",
   await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(/zizu's barbers/i);
   const img = page.locator("header picture img");
   await expect(img).toBeVisible();
+  await expect(img).not.toHaveAttribute("loading", "lazy");
   await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.currentSrc)).toContain("placeholder-hero-mobile");
   await expect(page.getByRole("link", { name: "Book an appointment" })).toHaveAttribute("href", "/book");
   const address = await page.getByRole("link", { name: /Upperthorpe Rd/ }).boundingBox();

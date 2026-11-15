@@ -2,7 +2,7 @@ import Link from "next/link";
 import { intlPhone } from "@/lib/format";
 import { shopConfig } from "../../shop.config";
 
-const link = "inline-flex min-h-12 items-center px-3 underline decoration-border underline-offset-4 hover:text-foreground";
+const link = "inline-flex min-h-12 items-center px-3 underline decoration-border underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 export function SiteFooter() {
   return (

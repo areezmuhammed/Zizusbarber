@@ -14,7 +14,7 @@ export function BarberCard({ barber = shopConfig.barber }: { barber?: Barber | n
           sizes="(min-width: 768px) 33vw, 100vw"
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-5 pt-16">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 to-transparent p-5 pt-16">
           <h2 id="barber-h" className="font-heading text-2xl">
             {barber.name}
           </h2>

@@ -93,7 +93,7 @@ function Actions({ b, onClose }: { b: DayBooking; onClose: () => void }) {
       <section aria-labelledby="len" className={`${panel} grid gap-3`}>
         <h3 id="len" className="font-heading text-xl leading-tight">
           Running over?
-          <span className="mt-1 block font-sans text-sm text-muted-foreground">Later bookings move up to make room.</span>
+          <span className="mt-1 block font-sans text-sm normal-case tracking-normal text-muted-foreground">Later bookings move up to make room.</span>
         </h3>
         <div className="grid grid-cols-3 gap-2">
           {[5, 10, 15].map((m) => (
@@ -155,7 +155,7 @@ function Actions({ b, onClose }: { b: DayBooking; onClose: () => void }) {
         {confirming ? (
           <div className="grid gap-2">
             <p className="text-sm">Cancel {firstName(b.name)}&rsquo;s booking? The time becomes free to book.</p>
-            <button type="button" disabled={pending} onClick={() => status("cancelled")} className={`${btn} bg-destructive text-white`}>
+            <button type="button" disabled={pending} onClick={() => status("cancelled")} className={`${btn} bg-destructive text-background`}>
               Yes, cancel booking
             </button>
             <button type="button" disabled={pending} onClick={() => setConfirming(false)} className={`${btn} border border-border`}>

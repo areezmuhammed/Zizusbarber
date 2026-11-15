@@ -13,7 +13,7 @@ export default function LoginPage() {
         width={1120}
         height={1400}
         sizes="(min-width: 640px) 384px, 100vw"
-        priority
+        loading="eager"
         className="aspect-[3/2] w-full rounded-sm object-cover"
       />
       <p className="font-heading text-2xl leading-none">Zizu&apos;s</p>
@@ -23,8 +23,8 @@ export default function LoginPage() {
       ) : (
         <form action={action} className="flex flex-col gap-3">
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" required autoComplete="email" className="min-h-12 rounded-sm border border-input bg-card px-3 text-base" />
-          <button type="submit" disabled={pending} className="min-h-12 rounded-sm bg-primary px-4 text-sm uppercase tracking-[0.14em] text-primary-foreground disabled:opacity-50">
+          <input id="email" name="email" type="email" required autoComplete="email" className="min-h-12 rounded-sm border border-input bg-card px-3 text-base focus-visible:outline-2 focus-visible:outline-primary" />
+          <button type="submit" disabled={pending} className="min-h-12 rounded-sm bg-primary px-4 text-sm uppercase tracking-[0.14em] text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50">
             Email me a sign-in link
           </button>
         </form>

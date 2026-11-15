@@ -18,7 +18,7 @@ export default async function AdminShell({ children }: { children: React.ReactNo
         <h1 className="font-heading text-2xl">Not authorised</h1>
         <p>This account is not an owner of this shop.</p>
         <form action={signOut}>
-          <button className="min-h-12 rounded-sm bg-primary px-4 text-sm uppercase tracking-[0.14em] text-primary-foreground">Sign out</button>
+          <button className="min-h-12 rounded-sm bg-primary px-4 text-sm uppercase tracking-[0.14em] text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Sign out</button>
         </form>
       </main>
     );

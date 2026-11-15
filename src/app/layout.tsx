@@ -7,7 +7,7 @@ import "./globals.css";
 const serif = Marcellus({ variable: "--font-serif", subsets: ["latin"], weight: "400" });
 const voice = Cormorant_Garamond({ variable: "--font-voice-face", subsets: ["latin"], weight: "500", style: "italic" });
 const sans = Manrope({ variable: "--font-sans", subsets: ["latin"] });
-const mono = JetBrains_Mono({ variable: "--font-mono-face", subsets: ["latin"] });
+const mono = JetBrains_Mono({ variable: "--font-mono-face", subsets: ["latin"], preload: false });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || shopConfig.url),

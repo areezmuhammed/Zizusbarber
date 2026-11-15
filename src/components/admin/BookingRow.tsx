@@ -27,7 +27,7 @@ export function BookingRow({ b, onOpen }: { b: DayBooking; onOpen: () => void })
     <li
       className={`rounded-sm border px-4 ${
         finished
-          ? "border-border/60 opacity-60"
+          ? "border-border/60 bg-card"
           : b.status === "arrived"
             ? "border-primary/70 bg-card shadow-[inset_4px_0_0_var(--color-primary)]"
             : "border-border bg-card"
@@ -39,12 +39,12 @@ export function BookingRow({ b, onOpen }: { b: DayBooking; onOpen: () => void })
         aria-label={`${first}, ${b.service}, ${time(b.start)} to ${time(b.end)}, ${STATUS_LABEL[b.status]}`}
         className="grid w-full grid-cols-[4.75rem_1fr_auto] items-start gap-x-3 pt-4 pb-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        <span className="font-heading text-[2rem] leading-none tabular-nums lining-nums">
+        <span className={`font-heading text-[2rem] leading-none tabular-nums lining-nums ${finished ? "text-muted-foreground" : ""}`}>
           {time(b.start)}
-          <span className="mt-1 block font-sans text-xs text-muted-foreground">to {time(b.end)}</span>
+          <span className="mt-1 block font-sans text-xs normal-case tracking-normal text-muted-foreground">to {time(b.end)}</span>
         </span>
         <span className="min-w-0 pt-0.5">
-          <span className="block truncate text-lg font-medium">{first}</span>
+          <span className={`block truncate text-lg font-medium ${finished ? "text-muted-foreground" : ""}`}>{first}</span>
           <span className="block truncate text-sm text-muted-foreground">{b.service}</span>
         </span>
         <span className={`mt-1 rounded-sm px-2.5 py-1 text-xs font-medium ${CHIP[b.status]}`}>{STATUS_LABEL[b.status]}</span>
