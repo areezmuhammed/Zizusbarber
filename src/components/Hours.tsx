@@ -13,7 +13,7 @@ const WEEK = [1, 2, 3, 4, 5, 6, 0]; // UK weeks start on Monday
 export async function Hours() {
   const hours = await getHours();
   return (
-    <section id="hours" aria-labelledby="hours-h" className="bg-background px-5 py-16">
+    <section id="hours" aria-labelledby="hours-h" className="bg-band px-5 py-16">
       <div className="mx-auto grid max-w-[1100px] gap-10 md:grid-cols-2 md:gap-14">
         <div>
           <p className="text-[11px] tracking-[0.3em] text-primary uppercase">Visit</p>
