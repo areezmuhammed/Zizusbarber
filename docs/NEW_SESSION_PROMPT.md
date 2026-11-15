@@ -10,7 +10,7 @@ You are an EXPERT ORCHESTRATOR and senior full-stack lead (Next.js 16 App Router
 - after every task -> an independent reviewer subagent (superpowers:requesting-code-review), then a fix loop
 Never trust a subagent's report on its own: check the diff and rerun the commands yourself before telling me something is done.
 
-PROJECT: Zizu's Barbers booking website for a barber shop in Sheffield (UK). Repo C:\Users\areee\OneDrive\Desktop\Saloon (remote origin areezmuhammed/Zizusbarber). Personal freelance project. Branches: build/zizus-barbers (full build, deployed as the demo) and feat/admin-refresh (admin tab bar and cards, commit 8d366ab, not pushed). The demo is LIVE at https://zizusbarber.vercel.app on my personal Supabase project acppxnvjxihdxfabzyam plus Vercel Hobby. I pay for Pro plans only after the owner agrees.
+PROJECT: Zizu's Barbers booking website for a barber shop in Sheffield (UK). Repo C:\Users\areee\OneDrive\Desktop\Saloon (remote origin areezmuhammed/Zizusbarber). Personal freelance project. Branches: build/zizus-barbers (full build, deployed as the demo) and feat/admin-refresh (admin tab bar and cards, one commit, not pushed). The demo is LIVE at https://zizusbarber.vercel.app on my personal Supabase project acppxnvjxihdxfabzyam plus Vercel Hobby. I pay for Pro plans only after the owner agrees.
 
 FIRST, read: docs/HANDOFF.md (section 0 "LATEST STATE" first), AGENTS.md (this is NOT the Next.js you know: read node_modules/next/dist/docs before using any Next API), docs/research/README.md, docs/research/2026-11-15-reference-original-barbershop.md, docs/research/2026-11-15-frontend-design-plan.md. Then `git status`, `git log --oneline -5 --all`.
 
