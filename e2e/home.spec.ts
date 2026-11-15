@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { shopConfig } from "../shop.config";
 
 test("home renders services from the database", async ({ page, request }) => {
   const res = await request.get(
@@ -90,4 +91,15 @@ test("marquee is decorative and still under reduced motion", async ({ page }) =>
   await expect(page.locator("[data-marquee]")).toHaveAttribute("aria-hidden", "true");
   const name = await page.locator("[data-marquee-track]").evaluate((el) => getComputedStyle(el).animationName);
   expect(name).toBe("none");
+});
+
+test("visit-us offers directions and call", async ({ page }) => {
+  await page.goto("/");
+  const hours = page.locator("#hours");
+  await expect(hours.getByRole("heading", { name: "Opening hours" })).toBeVisible();
+  const directions = hours.getByRole("link", { name: "Directions" });
+  const call = hours.getByRole("link", { name: "Call" });
+  await expect(directions).toHaveAttribute("href", shopConfig.mapsUrl);
+  await expect(call).toHaveAttribute("href", "tel:+447535423544");
+  for (const l of [directions, call]) expect((await l.boundingBox())!.height).toBeGreaterThanOrEqual(48);
 });

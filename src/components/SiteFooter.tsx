@@ -5,8 +5,9 @@ const link = "inline-flex min-h-12 items-center px-3 underline decoration-border
 
 export function SiteFooter() {
   return (
-    <footer className="px-5 pb-8 text-center text-xs text-muted-foreground">
-      <nav aria-label="Legal" className="flex justify-center">
+    <footer className="border-t border-primary/20 bg-band px-5 pb-8 pt-10 text-center text-xs text-muted-foreground">
+      <p className="font-heading text-xl text-foreground">{shopConfig.name}</p>
+      <nav aria-label="Legal" className="mt-2 flex justify-center">
         <Link href="/privacy" className={link}>Privacy</Link>
         <Link href="/cookies" className={link}>Cookies</Link>
       </nav>

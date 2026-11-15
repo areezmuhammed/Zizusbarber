@@ -1,3 +1,5 @@
+export type Barber = { name: string; photo: string; width: number; height: number; alt: string };
+
 export const shopConfig = {
   name: "Zizu's Barbers",
   tagline: "Premium Euro-Afro Styling in Sheffield",
@@ -8,6 +10,8 @@ export const shopConfig = {
   email: "bookings@zizusbarbers.com", // confirm this mailbox receives mail before launch (docs/launch-checklist.md)
   mapsUrl: "https://www.google.com/maps/search/?api=1&query=Zizu's%20Barbers%2C%20135%20Upperthorpe%20Rd%2C%20Sheffield%20S6%203EB",
   sameAs: ["https://www.instagram.com/zizusbarbers"], // add the Facebook page here if there is one
+  intro: "A Euro-Afro barbershop on Upperthorpe Road. Fades, tapers, beards and designs. Walk in, or book your chair online.", // draft: owner to approve
+  barber: null as Barber | null, // set only with the owner's approved name and photo
   timezone: "Europe/London" as const,
   theme: {
     bg: "#120F0B",

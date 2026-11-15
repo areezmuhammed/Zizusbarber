@@ -3,7 +3,9 @@ import { Analytics } from "@/components/Analytics";
 import { Gallery } from "@/components/Gallery";
 import { Hero } from "@/components/Hero";
 import { Hours } from "@/components/Hours";
+import { BarberCard } from "@/components/marketing/BarberCard";
 import { Marquee } from "@/components/marketing/Marquee";
+import { ShopIntro } from "@/components/marketing/ShopIntro";
 import { Services } from "@/components/Services";
 import { SiteFooter } from "@/components/SiteFooter";
 import { StickyBar } from "@/components/StickyBar";
@@ -39,6 +41,8 @@ export default function Home() {
         <Hero />
         <Marquee />
         <Services />
+        <ShopIntro />
+        <BarberCard />
         <Gallery />
         <Hours />
         <SiteFooter />

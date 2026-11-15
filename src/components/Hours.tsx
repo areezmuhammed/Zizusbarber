@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import Image from "next/image";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { hhmm, intlPhone } from "@/lib/format";
@@ -12,37 +13,61 @@ const WEEK = [1, 2, 3, 4, 5, 6, 0]; // UK weeks start on Monday
 export async function Hours() {
   const hours = await getHours();
   return (
-    <section id="hours" aria-labelledby="hours-h" className="px-5 py-14">
-      <div className="mx-auto max-w-2xl">
-        <h2 id="hours-h" className="font-heading text-4xl font-semibold">
-          Opening hours
-        </h2>
-        <dl className="mt-8">
-          {WEEK.map((d) => {
-            const slots = hours.filter((h) => h.weekday === d);
-            return (
-              <div key={d} className="flex justify-between gap-4 border-b border-border py-3">
-                <dt>{DAYS[d]}</dt>
-                <dd className={`font-mono text-sm ${slots.length ? "" : "text-muted-foreground"}`}>
-                  {slots.length
-                    ? slots.map((h) => `${hhmm(h.open_local)}–${hhmm(h.close_local)}`).join(", ")
-                    : "Closed"}
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
-        <p className="mt-3 text-sm text-muted-foreground">Times are UK local time.</p>
-        <Suspense>
-          <Closures />
-        </Suspense>
-        <address className="mt-10 not-italic leading-relaxed">
-          <span className="block font-heading text-2xl">{shopConfig.name}</span>
-          <span className="block text-muted-foreground">{shopConfig.address}</span>
-          <a href={`tel:+${intlPhone(shopConfig.phone)}`} className="inline-block py-3 font-mono text-primary">
-            {shopConfig.phone}
-          </a>
-        </address>
+    <section id="hours" aria-labelledby="hours-h" className="bg-background px-5 py-16">
+      <div className="mx-auto grid max-w-[1100px] gap-10 md:grid-cols-2 md:gap-14">
+        <div>
+          <p className="text-[11px] tracking-[0.3em] text-primary uppercase">Visit</p>
+          <h2 id="hours-h" className="mt-3 font-heading text-3xl">
+            Opening hours
+          </h2>
+          <dl className="mt-6">
+            {WEEK.map((d) => {
+              const slots = hours.filter((h) => h.weekday === d);
+              return (
+                <div key={d} className="flex justify-between gap-4 border-b border-primary/20 py-3">
+                  <dt>{DAYS[d]}</dt>
+                  <dd className={`font-mono text-sm ${slots.length ? "" : "text-muted-foreground"}`}>
+                    {slots.length
+                      ? slots.map((h) => `${hhmm(h.open_local)}–${hhmm(h.close_local)}`).join(", ")
+                      : "Closed"}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+          <p className="mt-3 text-sm text-muted-foreground">Times are UK local time.</p>
+          <Suspense>
+            <Closures />
+          </Suspense>
+        </div>
+        <div>
+          <Image
+            src="/images/brand/placeholder-visit.webp"
+            alt=""
+            width={1536}
+            height={1024}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            className="aspect-[3/2] w-full object-cover"
+          />
+          <address className="mt-6 not-italic leading-relaxed">
+            <span className="block font-heading text-2xl">{shopConfig.name}</span>
+            <span className="block text-muted-foreground">{shopConfig.address}</span>
+          </address>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href={shopConfig.mapsUrl}
+              className="inline-flex min-h-12 items-center rounded-sm bg-primary px-6 text-sm font-semibold tracking-wide text-primary-foreground uppercase"
+            >
+              Directions
+            </a>
+            <a
+              href={`tel:+${intlPhone(shopConfig.phone)}`}
+              className="inline-flex min-h-12 items-center rounded-sm border border-primary px-6 text-sm font-semibold tracking-wide text-primary uppercase"
+            >
+              Call
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -58,7 +83,7 @@ async function Closures() {
       <h3 className="font-heading text-2xl">Holidays and changes</h3>
       <ul aria-label="Upcoming closures" className="mt-3">
         {closures.map((c) => (
-          <li key={c.date} className="flex justify-between gap-4 border-b border-border py-3">
+          <li key={c.date} className="flex justify-between gap-4 border-b border-primary/20 py-3">
             <span>
               {DateTime.fromISO(c.date).setLocale("en-GB").toFormat("ccc d LLL")}
               {c.reason && <span className="block text-sm text-muted-foreground">{c.reason}</span>}
