@@ -52,6 +52,8 @@ test("hero shows the brand, the art-directed photo and a reachable Book button",
   await expect(img).toBeVisible();
   await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.currentSrc)).toContain("placeholder-hero-mobile");
   await expect(page.getByRole("link", { name: "Book an appointment" })).toHaveAttribute("href", "/book");
+  const address = await page.getByRole("link", { name: /Upperthorpe Rd/ }).boundingBox();
+  expect(address!.height).toBeGreaterThanOrEqual(48);
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.reload();
   await expect.poll(() => page.locator("header picture img").evaluate((i: HTMLImageElement) => i.currentSrc)).toContain("placeholder-hero-desktop");
@@ -67,12 +69,13 @@ test("hero Book button sits above the sticky bar on a 375x667 screen", async ({ 
 
 test("hero has no layout shift", async ({ page }) => {
   await page.goto("/", { waitUntil: "load" });
+  await page.locator("header picture img").evaluate((img: HTMLImageElement) => (img.complete ? null : img.decode()));
   const cls = await page.evaluate(
     () =>
       new Promise<number>((resolve) => {
         let sum = 0;
         const po = new PerformanceObserver((l) => {
-          for (const e of l.getEntries() as unknown as { value: number }[]) sum += e.value;
+          for (const e of l.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) if (!e.hadRecentInput) sum += e.value;
         });
         po.observe({ type: "layout-shift", buffered: true });
         setTimeout(() => resolve(sum), 500);

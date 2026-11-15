@@ -32,7 +32,7 @@ export function Hero() {
           </div>
           <a
             href={shopConfig.mapsUrl}
-            className="mt-2 inline-block py-3 text-sm text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
+            className="mt-2 inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground"
           >
             {shopConfig.address}
           </a>
