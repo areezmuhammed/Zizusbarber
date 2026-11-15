@@ -10,6 +10,8 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono-face);
   --font-heading: var(--font-serif);
+  --font-voice: var(--font-voice-face);
+  --color-band: var(--band);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,7 +52,7 @@
 
 :root {
   /* colours come from shopConfig.theme via the root layout; the site has one dark palette only */
-  --radius: 0.625rem;
+  --radius: 0.125rem;
 }
 
 @layer base {
@@ -62,5 +64,11 @@
   }
   html {
     @apply font-sans;
+    font-synthesis-weight: none; /* Marcellus is 400 only: never fake bold */
+  }
+  :where(.font-heading) {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 400;
   }
 }

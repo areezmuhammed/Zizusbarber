@@ -47,7 +47,7 @@ export function BookingRow({ b, onOpen }: { b: DayBooking; onOpen: () => void })
           <span className="block truncate text-lg font-medium">{first}</span>
           <span className="block truncate text-sm text-muted-foreground">{b.service}</span>
         </span>
-        <span className={`mt-1 rounded-full px-2.5 py-1 text-xs font-medium ${CHIP[b.status]}`}>{STATUS_LABEL[b.status]}</span>
+        <span className={`mt-1 rounded-sm px-2.5 py-1 text-xs font-medium ${CHIP[b.status]}`}>{STATUS_LABEL[b.status]}</span>
       </button>
       <a
         href={`tel:${b.phone}`}

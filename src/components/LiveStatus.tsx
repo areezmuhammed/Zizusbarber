@@ -34,7 +34,7 @@ export function LiveStatus({ initial }: { initial: Status }) {
     <p
       aria-live="polite"
       data-testid="status-badge"
-      className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-full border border-border bg-card px-4 py-2 font-mono text-[0.8125rem] text-foreground"
+      className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-sm border border-border bg-card px-4 py-2 font-mono text-[0.8125rem] text-foreground"
     >
       <span className="inline-flex items-center gap-2">
         <span

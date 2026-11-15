@@ -29,7 +29,7 @@ export function Sheet({ open, onClose, title, children }: {
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="-mr-2 grid size-12 shrink-0 place-items-center rounded-full text-muted-foreground focus-visible:outline-2 focus-visible:outline-primary"
+          className="-mr-2 grid size-12 shrink-0 place-items-center rounded-sm text-muted-foreground focus-visible:outline-2 focus-visible:outline-primary"
         >
           <X aria-hidden className="size-5" />
         </button>

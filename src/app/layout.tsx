@@ -1,11 +1,12 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
-import { Cormorant_Garamond, DM_Sans, JetBrains_Mono } from "next/font/google";
+import { Cormorant_Garamond, JetBrains_Mono, Manrope, Marcellus } from "next/font/google";
 import { shopConfig } from "../../shop.config";
 import "./globals.css";
 
-const serif = Cormorant_Garamond({ variable: "--font-serif", subsets: ["latin"], weight: ["500", "600"] });
-const sans = DM_Sans({ variable: "--font-sans", subsets: ["latin"] });
+const serif = Marcellus({ variable: "--font-serif", subsets: ["latin"], weight: "400" });
+const voice = Cormorant_Garamond({ variable: "--font-voice-face", subsets: ["latin"], weight: "500", style: "italic" });
+const sans = Manrope({ variable: "--font-sans", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-mono-face", subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ const line = `color-mix(in oklab, ${t.text} 14%, transparent)`;
 const raised = `color-mix(in oklab, ${t.text} 8%, ${t.surface})`;
 const themeVars = {
   "--background": t.bg,
+  "--band": t.band,
   "--foreground": t.text,
   "--card": t.surface,
   "--card-foreground": t.text,
@@ -57,7 +59,7 @@ const themeVars = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-GB" className={`dark ${serif.variable} ${sans.variable} ${mono.variable} antialiased`} style={themeVars}>
+    <html lang="en-GB" className={`dark ${serif.variable} ${voice.variable} ${sans.variable} ${mono.variable} antialiased`} style={themeVars}>
       <body className="min-h-dvh overflow-x-clip">
         {/* No <Analytics /> here: it would record /booking/<token> and /admin paths. Public pages render it. */}
         {children}

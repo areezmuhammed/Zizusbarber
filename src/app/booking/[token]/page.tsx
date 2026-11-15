@@ -56,7 +56,7 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
         <>
           <a
             href={`/booking/${token}/calendar.ics`}
-            className="flex min-h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="flex min-h-12 items-center justify-center rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             Add to calendar
           </a>

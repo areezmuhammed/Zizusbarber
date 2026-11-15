@@ -22,10 +22,14 @@ test("sticky Book bar is visible at 375px", async ({ page }) => {
   await expect(bar).toBeInViewport();
 });
 
-test("no horizontal scroll", async ({ page }) => {
-  await page.goto("/");
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  expect(overflow).toBeLessThanOrEqual(0);
+test("no horizontal scroll at 320–1280 on / and /book", async ({ page }) => {
+  for (const width of [320, 375, 390, 430, 768, 1280]) {
+    for (const path of ["/", "/book"]) {
+      await page.setViewportSize({ width, height: 812 });
+      await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `${path} @${width}`).toBeLessThanOrEqual(0);
+    }
+  }
 });
 
 test("HairSalon JSON-LD present without aggregateRating", async ({ page }) => {

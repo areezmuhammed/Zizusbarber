@@ -114,7 +114,7 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
       >
         <header className="flex items-center gap-1 px-3 pt-3">
           {step > 0 ? (
-            <button type="button" onClick={() => go(step - 1)} className={`${target} flex min-w-11 items-center justify-center rounded-full`}>
+            <button type="button" onClick={() => go(step - 1)} className={`${target} flex min-w-11 items-center justify-center rounded-sm`}>
               <ChevronLeft className="size-5" aria-hidden />
               <span className="sr-only">Back</span>
             </button>
@@ -187,7 +187,7 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
                   <button
                     type="button"
                     onClick={() => loadTimes(service, date)}
-                    className={`${target} min-h-12 rounded-full border border-border px-6 font-medium`}
+                    className={`${target} min-h-12 rounded-sm border border-border px-6 font-medium`}
                   >
                     Try again
                   </button>
@@ -257,7 +257,7 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
                 </a>
                 .
               </p>
-              <button type="submit" className={`${target} min-h-12 w-full rounded-full bg-primary font-medium text-primary-foreground`}>
+              <button type="submit" className={`${target} min-h-12 w-full rounded-sm bg-primary font-medium text-primary-foreground`}>
                 Continue
               </button>
             </form>
@@ -284,7 +284,7 @@ export function BookingSheet({ services, days }: { services: Service[]; days: st
                 type="button"
                 onClick={confirm}
                 disabled={pending}
-                className={`${target} mt-5 min-h-12 w-full rounded-full bg-primary font-medium text-primary-foreground disabled:opacity-60`}
+                className={`${target} mt-5 min-h-12 w-full rounded-sm bg-primary font-medium text-primary-foreground disabled:opacity-60`}
               >
                 {pending ? "Booking…" : "Confirm booking"}
               </button>

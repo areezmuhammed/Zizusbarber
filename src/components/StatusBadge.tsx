@@ -7,5 +7,5 @@ export async function StatusBadge() {
 }
 
 export function StatusBadgeFallback() {
-  return <span className="block h-[38px] w-40 rounded-full border border-border bg-card" aria-hidden />;
+  return <span className="block h-[38px] w-40 rounded-sm border border-border bg-card" aria-hidden />;
 }

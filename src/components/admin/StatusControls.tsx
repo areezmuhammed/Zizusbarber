@@ -16,9 +16,9 @@ const COUNTERS = [
   ["in_shop", "In shop"],
   ["waiting", "Waiting"],
 ] as const;
-// own classes rather than btn: btn's rounded-xl would fight rounded-full
+// own classes rather than btn: btn's rounded-xl would fight rounded-sm
 const step =
-  "grid size-16 shrink-0 place-items-center rounded-full border bg-background disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "grid size-16 shrink-0 place-items-center rounded-sm border bg-background disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 export function StatusControls({ initial }: { initial: Status }) {
   const [s, setS] = useState(initial);

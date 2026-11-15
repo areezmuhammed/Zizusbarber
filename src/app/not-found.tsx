@@ -6,7 +6,7 @@ import { shopConfig } from "../../shop.config";
 export const metadata: Metadata = { title: `Page not found | ${shopConfig.name}`, robots: { index: false } };
 
 const btn =
-  "inline-flex min-h-12 items-center justify-center rounded-full px-7 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "inline-flex min-h-12 items-center justify-center rounded-sm px-7 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 export default function NotFound() {
   return (

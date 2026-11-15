@@ -10,12 +10,13 @@ export const shopConfig = {
   sameAs: ["https://www.instagram.com/zizusbarbers"], // add the Facebook page here if there is one
   timezone: "Europe/London" as const,
   theme: {
-    bg: "#0B0B0C",
-    surface: "#161618",
-    text: "#F2EDE4",
-    accent: "#C8A15A",
-    muted: "#9E998F", // >= 4.5:1 on bg, surface and raised surfaces
-    destructive: "#E5484D",
+    bg: "#120F0B",
+    band: "#17130E",
+    surface: "#1F1913",
+    text: "#F3EAD8",
+    accent: "#C9A44C",
+    muted: "#B3A487", // >= 4.5:1 on bg, band, surface and raised surfaces
+    destructive: "#E5605A",
   },
   privacy: {
     // PLACEHOLDER: set the real ICO registration number before launch; the privacy page omits the line while null

@@ -28,7 +28,7 @@ export function Hero() {
         <div className="mt-6">
           <Link
             href="/book"
-            className="inline-flex min-h-12 items-center rounded-full bg-primary px-7 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-12 items-center rounded-sm bg-primary px-7 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             Book an appointment
           </Link>

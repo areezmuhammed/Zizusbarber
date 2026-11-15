@@ -7,7 +7,7 @@ import { parseDay } from "@/lib/admin-form";
 import { utcToLondon } from "@/lib/time";
 
 const nav =
-  "grid size-12 place-items-center rounded-full border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "grid size-12 place-items-center rounded-sm border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 export default async function Today({ searchParams }: { searchParams: Promise<{ date?: string | string[] }> }) {
   const { date: raw } = await searchParams;

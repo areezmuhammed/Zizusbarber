@@ -6,7 +6,7 @@ import { intlPhone } from "@/lib/format";
 import { shopConfig } from "../../shop.config";
 
 const btn =
-  "flex min-h-12 w-full items-center justify-center rounded-full px-5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "flex min-h-12 w-full items-center justify-center rounded-sm px-5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 type Step = "idle" | "confirm" | "done" | "failed";
 

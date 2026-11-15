@@ -21,7 +21,7 @@ export function StopReminders({ token, off }: { token: string; off: boolean }) {
       disabled={pending}
       // success revalidates the page, which re-renders with off=true
       onClick={() => start(async () => setFailed(!(await stopReminders(token)).ok))}
-      className="flex min-h-12 w-full items-center justify-center rounded-full border border-border px-5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="flex min-h-12 w-full items-center justify-center rounded-sm border border-border px-5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       {pending ? "Stopping…" : "Stop reminder messages"}
     </button>

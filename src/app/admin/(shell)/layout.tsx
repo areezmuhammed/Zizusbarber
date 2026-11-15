@@ -30,7 +30,7 @@ export default async function AdminShell({ children }: { children: React.ReactNo
           Zizu&apos;s <span className="text-base text-muted-foreground">for the shop</span>
         </p>
         <form action={signOut}>
-          <button className="-mr-2 inline-flex min-h-12 items-center gap-2 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
+          <button className="-mr-2 inline-flex min-h-12 items-center gap-2 rounded-sm px-3 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
             <LogOut aria-hidden className="size-4" />
             Sign out
           </button>
