@@ -44,3 +44,39 @@ test("HairSalon JSON-LD present without aggregateRating", async ({ page }) => {
   expect(salon.openingHoursSpecification.length).toBeGreaterThan(0);
   expect(JSON.stringify(raw)).not.toContain("aggregateRating");
 });
+
+test("hero shows the brand, the art-directed photo and a reachable Book button", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(/zizu's barbers/i);
+  const img = page.locator("header picture img");
+  await expect(img).toBeVisible();
+  await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.currentSrc)).toContain("placeholder-hero-mobile");
+  await expect(page.getByRole("link", { name: "Book an appointment" })).toHaveAttribute("href", "/book");
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.reload();
+  await expect.poll(() => page.locator("header picture img").evaluate((i: HTMLImageElement) => i.currentSrc)).toContain("placeholder-hero-desktop");
+});
+
+test("hero Book button sits above the sticky bar on a 375x667 screen", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto("/");
+  const book = await page.getByRole("link", { name: "Book an appointment" }).boundingBox();
+  const bar = await page.getByRole("navigation", { name: "Quick actions" }).boundingBox();
+  expect(book!.y + book!.height).toBeLessThanOrEqual(bar!.y);
+});
+
+test("hero has no layout shift", async ({ page }) => {
+  await page.goto("/", { waitUntil: "load" });
+  const cls = await page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        let sum = 0;
+        const po = new PerformanceObserver((l) => {
+          for (const e of l.getEntries() as unknown as { value: number }[]) sum += e.value;
+        });
+        po.observe({ type: "layout-shift", buffered: true });
+        setTimeout(() => resolve(sum), 500);
+      }),
+  );
+  expect(cls).toBeLessThan(0.1);
+});
