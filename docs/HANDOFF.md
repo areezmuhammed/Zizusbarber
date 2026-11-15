@@ -1,5 +1,14 @@
 # Handoff: Zizu's Barbers (written 15 November 2026)
 
+## 0. LATEST STATE (end of session 2, 15 November 2026): read this before anything else
+- **Demo is live** at https://zizusbarber.vercel.app (Vercel Hobby, team "areezmuhammed's projects", production branch `build/zizus-barbers` at `2068031`). Per-deployment URLs (`zizusbarber-<hash>-...vercel.app`) ask for a Vercel login by design; share only the main URL. The Vercel connector in the Claude app showed 0 projects for that team, so it may be a different login; ask the developer before using it.
+- **Personal Supabase project `acppxnvjxihdxfabzyam`** ("elonnmuskmelon@gmail.com's Project") has: migrations 001-018 applied; demo data (1 barber, 8 placeholder services, Tue-Sun 09:30-20:00, Monday closed); owner row for auth user `10613acd-9b79-400c-ab29-e723a4130fee` (the developer's Gmail); 6 gallery photos. `notify` is NOT deployed (no SMS/email).
+- **The 6 gallery photos are AI-generated** (Codex imagegen) placeholders for the private demo. Never present them as the shop's real work on a public launch.
+- **Still to do by the developer (dashboards):** Supabase Auth URL Configuration (Site URL = https://zizusbarber.vercel.app, redirect `https://zizusbarber.vercel.app/auth/callback**`, optionally `http://localhost:3000/auth/callback**`); turn OFF the OAuth Server and "Allow new users to sign up"; Vercel `NEXT_PUBLIC_SITE_URL=https://zizusbarber.vercel.app` then redeploy. Until then owner magic links fall back to localhost (seen: `otp_expired` on localhost). Open the magic link on the same phone/browser that requested it (PKCE).
+- **Branch `feat/admin-refresh`** (commit `8d366ab`, not pushed, not merged): admin bottom tab bar, booking cards, big Status counters, 320px Settings overflow fix, new e2e. Gates were green: tsc, Vitest 237, pgTAP 265 (after `db reset`), Playwright 56, build. The developer is **not satisfied with the overall look** and wants a new direction (next point); treat this branch as a starting point, not final.
+- **New design direction:** the developer wants the public site (and the admin to match) to feel like https://originalbarbershop.nyc: warm, photo-led, not "depressing black". Analysis: `docs/research/2026-11-15-reference-original-barbershop.md`. It supersedes the "midnight black" look in the frontend plan where they conflict. Needs a brainstorm and approval before building.
+- Local notes: Docker Desktop must be running for the local stack. `pgTAP gallery.sql` fails if the local gallery has rows: run `npx supabase db reset` before `supabase test db`. Only one `next dev` per project can run (Playwright's server on 3107 fails if the preview on 3000 is running). Helper scripts used this session (local-only owner link, gallery upload) lived in the session scratchpad and are not in the repo.
+
 Read this first in a new session. Then `AGENTS.md`, `docs/launch-checklist.md`, `docs/cutover.md` and `docs/research/README.md`.
 
 ## 1. What this is
