@@ -15,7 +15,7 @@ const TABS = [
 export function AdminNav() {
   const path = usePathname();
   return (
-    <nav aria-label="Admin" className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav aria-label="Admin" className="fixed inset-x-0 bottom-0 z-40 border-t border-primary/20 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <ul className="mx-auto grid max-w-2xl grid-cols-4">
         {TABS.map(([name, href, Icon]) => {
           const current = href === "/admin" ? path === href : path.startsWith(href);

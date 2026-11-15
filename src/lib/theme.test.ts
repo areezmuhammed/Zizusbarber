@@ -27,4 +27,15 @@ describe("theme", () => {
       muted: "#B3A487", accent: "#C9A44C", destructive: "#E5605A",
     });
   });
+
+  it("admin status chips meet 4.5:1 on the card surface", () => {
+    const t = shopConfig.theme;
+    const mix = (fg: string, a: number) =>
+      "#" + [1, 3, 5].map((i) => Math.round(parseInt(fg.slice(i, i + 2), 16) * a + parseInt(t.surface.slice(i, i + 2), 16) * (1 - a)).toString(16).padStart(2, "0")).join("");
+    // bg-primary/15 text-primary, bg-destructive/10 (15% is only 4.19:1) text-destructive, bg-muted text-muted-foreground, arrived: bg-primary text-primary-foreground
+    expect(ratio(t.accent, mix(t.accent, 0.15))).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(t.destructive, mix(t.destructive, 0.1))).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(t.muted, t.surface)).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(t.bg, t.accent)).toBeGreaterThanOrEqual(4.5);
+  });
 });

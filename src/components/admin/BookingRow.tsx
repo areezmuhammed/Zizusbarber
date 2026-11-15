@@ -12,11 +12,11 @@ export const STATUS_LABEL: Record<DayBooking["status"], string> = {
 };
 
 const CHIP: Record<DayBooking["status"], string> = {
-  pending: "border border-dashed border-muted-foreground text-muted-foreground",
-  confirmed: "border border-border text-foreground",
+  pending: "border border-dashed border-muted-foreground bg-muted text-muted-foreground",
+  confirmed: "bg-primary/15 text-primary",
   arrived: "bg-primary text-primary-foreground",
-  done: "text-muted-foreground",
-  no_show: "border border-destructive text-destructive",
+  done: "bg-muted text-muted-foreground",
+  no_show: "border border-destructive bg-destructive/10 text-destructive",
 };
 
 export function BookingRow({ b, onOpen }: { b: DayBooking; onOpen: () => void }) {
@@ -25,7 +25,7 @@ export function BookingRow({ b, onOpen }: { b: DayBooking; onOpen: () => void })
   const phone = nationalPhone(b.phone);
   return (
     <li
-      className={`rounded-2xl border px-4 ${
+      className={`rounded-sm border px-4 ${
         finished
           ? "border-border/60 opacity-60"
           : b.status === "arrived"
@@ -52,7 +52,7 @@ export function BookingRow({ b, onOpen }: { b: DayBooking; onOpen: () => void })
       <a
         href={`tel:${b.phone}`}
         aria-label={`Call ${first} on ${phone}`}
-        className="mb-2 ml-[5.5rem] inline-flex min-h-12 items-center gap-2 rounded-xl pr-3 text-sm tabular-nums text-primary focus-visible:outline-2 focus-visible:outline-primary"
+        className="mb-2 ml-[5.5rem] inline-flex min-h-12 items-center gap-2 rounded-sm pr-3 text-sm tabular-nums text-primary focus-visible:outline-2 focus-visible:outline-primary"
       >
         <Phone aria-hidden className="size-4" />
         {phone}

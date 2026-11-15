@@ -9,6 +9,14 @@ test("unauthenticated /admin redirects to login", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Admin sign in" })).toBeVisible();
 });
 
+test("login page uses the shop theme", async ({ page }) => {
+  await page.goto("/admin/login");
+  const button = page.getByRole("button", { name: "Email me a sign-in link" });
+  await expect(button).toHaveCSS("background-color", "rgb(201, 164, 76)");
+  expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(18, 15, 11)");
+});
+
 test("login form gives a generic response for unknown addresses", async ({ page }) => {
   await page.goto("/admin/login");
   await page.getByLabel("Email").fill(`nobody-${Date.now()}@example.test`);
