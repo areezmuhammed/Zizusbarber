@@ -9,9 +9,9 @@ export async function Marquee() {
     <div data-marquee aria-hidden="true" className="overflow-hidden border-y border-primary/25 bg-band py-3">
       <div data-marquee-track className="flex w-max motion-safe:animate-[marquee_40s_linear_infinite]">
         {[0, 1].map((i) => (
-          <span key={i} className="font-heading text-sm tracking-[0.2em] whitespace-nowrap text-primary/90 pr-8">
-            {`${text} · ${text}`}
-            <span className="pl-8">·</span>
+          <span key={i} className="font-heading text-sm tracking-[0.2em] whitespace-nowrap text-primary/90">
+            {/* nbsp: a trailing normal space would collapse, making the loop seam tighter than " · " */}
+            {`${text} · ${text} · `}
           </span>
         ))}
       </div>
