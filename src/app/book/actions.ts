@@ -9,6 +9,7 @@ import { generateSlots } from "@/lib/slots";
 import { addLondonDays, londonToUtc } from "@/lib/time";
 
 const STEP_MIN = 15;
+const HORIZON_MS = 90 * 24 * 60 * 60 * 1000; // public horizon, same as create_booking (017)
 
 // Free start times (UTC ISO) for a service on a London date. Display only: create_booking re-checks everything.
 export async function getTimes(serviceId: string, date: string): Promise<string[]> {
@@ -36,7 +37,9 @@ export async function getTimes(serviceId: string, date: string): Promise<string[
     busy,
     closed: false,
     now: new Date(),
-  }).map((d) => d.toISOString());
+  })
+    .filter((d) => d.getTime() <= Date.now() + HORIZON_MS)
+    .map((d) => d.toISOString());
 }
 
 export type BookResult = { error: "taken" | "too_many" | "busy" | "invalid" | "details" };

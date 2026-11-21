@@ -65,4 +65,24 @@ describe.skipIf(!up)("createBooking (local stack)", () => {
     expect((await at(later[1])).ok).toBe(true); // 3rd
     expect(await at(later[2])).toEqual({ ok: false, reason: "too_many" });
   });
+
+  it("commits just one booking when two requests race for the same slot", async () => {
+    const phone = "+447700900322";
+    const { data: svc } = await admin.from("services").select("id").eq("name", "Hair Cut").single();
+    const args = { serviceId: svc!.id, startAt: londonToUtc(DAY, "15:00")!, name: "Race test", phone };
+    try {
+      const results = await Promise.all([
+        createBooking(args, createClient(URL, ANON)),
+        createBooking(args, createClient(URL, ANON)),
+      ]);
+      expect(results.map((r) => r.ok ? "booked" : r.reason).sort()).toEqual(["booked", "taken"]);
+      const { count, error } = await admin.from("bookings").select("id", { count: "exact", head: true })
+        .eq("phone", phone).eq("start_at", args.startAt.toISOString());
+      expect(error).toBeNull();
+      expect(count).toBe(1);
+    } finally {
+      await admin.from("bookings").delete().eq("phone", phone).eq("customer_name", args.name);
+      await admin.from("public_booking_log").delete().eq("phone_hash", createHash("md5").update(phone).digest("hex"));
+    }
+  });
 });

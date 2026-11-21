@@ -40,6 +40,10 @@ describe("generateSlots", () => {
     const s = hhmm(generateSlots({ ...base, date: "2026-03-29", openLocal: "00:00", closeLocal: "04:00" }));
     expect(s).toEqual(["00:00", "00:30", "02:00", "02:30", "03:00", "03:30"]);
   });
+  it("28 Mar 2027 skips 01:00 and 01:30", () => {
+    const s = hhmm(generateSlots({ ...base, date: "2027-03-28", openLocal: "00:00", closeLocal: "04:00" }));
+    expect(s).toEqual(["00:00", "00:30", "02:00", "02:30", "03:00", "03:30"]);
+  });
   it("25 Oct 2026 yields 8 strictly increasing instants", () => {
     const ds = generateSlots({ ...base, date: "2026-10-25", openLocal: "00:00", closeLocal: "04:00" });
     expect(ds).toHaveLength(8);

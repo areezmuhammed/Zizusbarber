@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createBooking = vi.fn();
+const getServices = vi.fn();
+const getHours = vi.fn();
 vi.mock("@/lib/booking", () => ({ createBooking }));
-vi.mock("@/lib/shop-data", () => ({}));
+vi.mock("@/lib/shop-data", () => ({ getServices, getHours, getClosures: async () => [] }));
+vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc: async () => ({ data: [], error: null }) }) }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
-const { book } = await import("./actions");
+const { book, getTimes } = await import("./actions");
 
 const good = {
   serviceId: "8f1c2a34-5b6d-4e7f-8a9b-0c1d2e3f4a5b",
@@ -15,8 +18,20 @@ const good = {
   email: "",
 };
 
+it("does not advertise slots after the public 90-day booking horizon", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-01-01T10:00:00Z"));
+  try {
+    getServices.mockResolvedValue([{ id: good.serviceId, duration_min: 30 }]);
+    getHours.mockResolvedValue([{ weekday: 4, open_local: "09:30:00", close_local: "10:15:00" }]);
+    await expect(getTimes(good.serviceId, "2026-04-02")).resolves.toEqual([]);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 describe("book action trust boundary", () => {
-  beforeEach(() => createBooking.mockReset());
+  beforeEach(() => createBooking.mockReset().mockResolvedValue({ ok: false, reason: "invalid" }));
 
   it.each([
     ["non-string name", { ...good, name: 42 }],
@@ -25,6 +40,7 @@ describe("book action trust boundary", () => {
     ["oversize email", { ...good, email: `${"a".repeat(250)}@b.co` }],
     ["bad serviceId", { ...good, serviceId: "1; drop table" }],
     ["bad start", { ...good, start: "not a date" }],
+    ["nonexistent calendar date", { ...good, start: "2027-02-29T10:45:00Z" }],
     ["not an object", "hello"],
   ])("%s returns details error and never reaches the RPC", async (_, input) => {
     await expect(book(input)).resolves.toEqual({ error: "details" });

@@ -28,6 +28,17 @@ describe("buildIcs", () => {
     const ics = buildIcs("tok", { service_name: "A\nB\r\nC", ...times });
     expect(ics.replace(/\r\n/g, "")).not.toMatch(/[\r\n]/);
   });
+  it("escapes a bare carriage return in a service name", () => {
+    const ics = buildIcs("tok", { service_name: "Cut\rBeard", ...times });
+    expect(ics).toContain("SUMMARY:Cut\\nBeard at");
+    expect(ics.replace(/\r\n/g, "")).not.toContain("\r");
+  });
+  it("keeps the two occurrences of 01:30 distinct in a calendar event", () => {
+    const ics = buildIcs("tok", {
+      service_name: "Hair Cut", start_at: "2027-10-31T01:30:00+01:00", end_at: "2027-10-31T01:30:00+00:00",
+    });
+    expect(ics).toContain("DTSTART:20271031T003000Z\r\nDTEND:20271031T013000Z\r\n");
+  });
   it("folds lines over 75 octets with CRLF + space", () => {
     const ics = buildIcs("tok", { service_name: "é".repeat(100), ...times });
     const lines = ics.split("\r\n");

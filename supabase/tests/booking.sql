@@ -1,14 +1,19 @@
 begin;
-select plan(15);
+select plan(16);
 
 -- 2030-01-01 is a Tuesday (open 09:30-20:00 London, = UTC in winter); 2030-01-07 is a Monday (closed)
 create temp table svc as select id from services where name = 'Hair Cut';
-grant select on svc to anon, authenticated;
+create temp table fall_back as
+select oct_end - extract(dow from oct_end)::int as day
+from (select make_date(extract(year from now())::int + 1, 10, 31) as oct_end) next_october;
+grant select on svc, fall_back to anon, authenticated;
 
 -- Fixed far-future dates (BST edges) are beyond the public 90-day horizon (016), so these hours/overlap rules are
 -- exercised as the owner, who is exempt from the horizon and the per-phone cap only. Public limits: hardening.sql.
 insert into auth.users (id) values ('00000000-0000-0000-0000-0000000005c2');
 insert into owners (user_id) values ('00000000-0000-0000-0000-0000000005c2');
+-- Early special hours on the repeated-hour Sunday.
+insert into closures (date, open_local, close_local) select day, '01:10', '01:50' from fall_back;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000005c2","role":"authenticated"}', true);
 set local role authenticated;
 select lives_ok($$select * from create_booking((select id from svc), '2030-01-01 10:00+00', 'Ann', '+447700900700', 'a@x.test')$$, 'books an open slot');
@@ -36,6 +41,10 @@ select throws_ok($$select * from create_booking((select id from svc), '2031-03-3
   'P0001', 'outside_hours', 'spring-forward day: 19:00Z (20:00 BST) rejected');
 select lives_ok($$select * from create_booking((select id from svc), '2031-03-30 18:30+00', 'Gus', '+447700900706', 'g@x.test')$$,
   'spring-forward day: 18:30Z (19:30 BST, ends 20:00) accepted');
+
+select lives_ok($$select * from create_booking((select id from svc),
+  (select day + time '01:20' from fall_back) at time zone 'UTC', 'Late', '+447700900707', '')$$,
+  'fall-back closure: a cut ending exactly at 01:50 GMT is accepted');
 
 reset role;
 select is((select end_at - start_at from bookings where customer_name = 'Ann'), interval '30 minutes', 'end = start + duration');

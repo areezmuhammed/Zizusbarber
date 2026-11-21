@@ -19,6 +19,18 @@ const kinds = (d: Due[]) => d.map((x) => `${x.kind}:${x.channel}`).sort();
 const at = (b: Booking, msBefore: number) => new Date(Date.parse(b.start_at) - msBefore);
 
 describe("dueNotifications", () => {
+  it.each([
+    ["2027-03-28T01:30:00Z", "2027-03-27T01:30:00Z", "2027-03-27T23:30:00Z", "Sun 28 Mar, 02:30"],
+    ["2027-10-31T01:30:00Z", "2027-10-30T01:30:00Z", "2027-10-30T23:30:00Z", "Sun 31 Oct, 01:30"],
+  ])("uses elapsed reminder windows and London message time for %s", (start_at, dayBefore, twoHoursBefore, label) => {
+    const b = booking({ start_at, created_at: "2027-01-01T00:00:00Z" });
+    expect(kinds(dueNotifications([b], new Date(Date.parse(dayBefore) - 1)))).toEqual([]);
+    expect(kinds(dueNotifications([b], new Date(dayBefore)))).toEqual(["reminder_24h:sms"]);
+    expect(kinds(dueNotifications([b], new Date(twoHoursBefore)))).toEqual(["reminder_2h:email"]);
+    expect(render("reminder_24h", b, shop).smsText).toContain(label);
+    expect(render("reminder_2h", b, shop).emailText).toContain(label);
+  });
+
   it("confirmation within 24h of creation: email when present, else SMS", () => {
     const b = booking({ created_at: "2026-11-10T10:00:00Z" });
     const now = new Date("2026-11-10T10:05:00Z");

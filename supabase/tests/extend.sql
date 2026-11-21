@@ -1,5 +1,5 @@
 begin;
-select plan(20);
+select plan(21);
 
 -- seed: barber ...01, open Tue-Sun 09:30-20:00 London; Jan 2030 London = UTC
 insert into auth.users (id) values
@@ -26,7 +26,9 @@ from (values
   ('00000000-0000-0000-0000-0000000003a2', 'F',  '2030-01-03 19:40+00', '2030-01-03 20:00+00'),
   -- day 4 (Fri): shortening
   ('00000000-0000-0000-0000-0000000004a0', 'T4', '2030-01-04 10:00+00', '2030-01-04 10:40+00'),
-  ('00000000-0000-0000-0000-0000000004a1', 'G',  '2030-01-04 10:40+00', '2030-01-04 11:10+00')
+  ('00000000-0000-0000-0000-0000000004a1', 'G',  '2030-01-04 10:40+00', '2030-01-04 11:10+00'),
+  -- day 5 (Sat): the target is the last appointment of the day
+  ('00000000-0000-0000-0000-0000000005a0', 'T5', '2030-01-05 19:30+00', '2030-01-05 19:50+00')
 ) v(id, n, s, e);
 
 -- non-owner refused
@@ -85,6 +87,9 @@ select is((select start_at from bookings where customer_name = 'G'), '2030-01-04
 
 select throws_ok($$select extend_booking('00000000-0000-0000-0000-0000000004a0', '2030-01-04 10:00+00', 'x')$$,
   'P0001', 'invalid', 'end not after start rejected');
+
+select is(extend_booking('00000000-0000-0000-0000-0000000005a0', '2030-01-05 20:00+00', 'at closing')->>'ok',
+  'true', 'the last booking can end exactly at closing');
 
 reset role;
 select * from finish();

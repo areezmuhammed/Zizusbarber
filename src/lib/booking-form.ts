@@ -75,6 +75,7 @@ export function parseBooking(input: unknown) {
   const { serviceId, start, name, phone, email } = input as Record<string, unknown>;
   if (typeof serviceId !== "string" || !UUID.test(serviceId)) return null;
   if (typeof start !== "string" || !ISO.test(start) || Number.isNaN(Date.parse(start))) return null;
+  if (new Date(start).toISOString().slice(0, 19) !== start.slice(0, 19)) return null; // e.g. 2027-02-29 rolls to 1 March
   if (typeof name !== "string" || typeof phone !== "string" || typeof email !== "string") return null;
   if (Object.keys(validateDetails({ name, phone, email })).length) return null;
   return {

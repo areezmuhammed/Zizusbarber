@@ -36,14 +36,23 @@ export function startLive(d: LiveDeps) {
     const s = toStatus(row);
     if (s && !stopped) d.onStatus(s);
   };
-  const refetch = () => d.fetchRow().then(push, () => {});
+  // Bumped on every Realtime row: a fetch that started earlier is stale and must not overwrite the newer state.
+  let seq = 0;
+  const refetch = () => {
+    const s = seq;
+    return d.fetchRow().then((r) => s === seq && push(r), () => {});
+  };
   // Every connection has a generation; callbacks from a superseded or stopped one are ignored.
   let gen = 0;
   const connect = () => {
     unsub?.();
     const g = ++gen;
     unsub = d.subscribe(
-      (r) => g === gen && push(r),
+      (r) => {
+        if (g !== gen) return;
+        seq++;
+        push(r);
+      },
       (ok) => {
         if (stopped || g !== gen) return;
         if (ok) {

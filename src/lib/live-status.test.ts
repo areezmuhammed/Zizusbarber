@@ -52,6 +52,29 @@ describe("startLive", () => {
     expect(h.seen).toContain(3);
     expect(h.tick()).toBeNull();
   });
+  it("keeps a newer Realtime change when an older status fetch finishes late", async () => {
+    let receive: (value: unknown) => void = () => {};
+    const fetched = Promise.withResolvers<unknown>();
+    const onStatus = vi.fn();
+    const stop = startLive({
+      subscribe: (onRow, onState) => {
+        receive = onRow;
+        onState(true);
+        return () => {};
+      },
+      fetchRow: () => fetched.promise,
+      onStatus,
+    });
+    const closed = { ...row(0), state: "closed" };
+    try {
+      receive(closed);
+      fetched.resolve(row(0));
+      await fetched.promise;
+      expect(onStatus).toHaveBeenLastCalledWith(closed);
+    } finally {
+      stop();
+    }
+  });
   it("polls and resubscribes when the subscription errors, stops polling once it recovers", async () => {
     const h = harness();
     h.states[0](false);

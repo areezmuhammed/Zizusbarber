@@ -48,7 +48,7 @@ export async function stopRemindersByToken(token: string): Promise<{ ok: boolean
 }
 
 const icsDate = (iso: string) => new Date(iso).toISOString().replace(/[-:]|\.\d{3}/g, "");
-const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/[;,]/g, "\\$&").replace(/\r?\n/g, "\\n");
+const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/[;,]/g, "\\$&").replace(/\r\n|\r|\n/g, "\\n");
 
 // RFC 5545 3.1: lines over 75 octets are folded as CRLF + one space; split on code points, never inside a UTF-8 sequence.
 const fold = (line: string) => {

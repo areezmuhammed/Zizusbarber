@@ -77,6 +77,24 @@ test("rapid taps each apply their own delta", async ({ browser }) => {
   await owner.context().close();
 });
 
+test("the first public response after a status save contains the new status", async ({ browser, request }) => {
+  const owner = await signedIn(browser, "statusfresh", true);
+  try {
+    await owner.goto("/admin/status");
+    const badgeHtml = async () => {
+      const response = await request.get("/");
+      expect(response.ok()).toBe(true);
+      return (await response.text()).match(/<p[^>]*data-testid="status-badge"[^>]*>[\s\S]*?<\/p>/)?.[0];
+    };
+    await expect.poll(badgeHtml).toContain("Open");
+    await owner.getByText("Closed", { exact: true }).click();
+    await expect(owner.getByRole("radio", { name: "Closed" })).toBeChecked();
+    expect(await badgeHtml()).toContain("Closed");
+  } finally {
+    await owner.context().close();
+  }
+});
+
 // Real browser websocket to Realtime is closed by the test (page.routeWebSocket), so only polling can update the badge.
 test("badge falls back to 30s polling when the realtime subscription fails", async ({ page }) => {
   test.setTimeout(90_000);

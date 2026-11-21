@@ -57,6 +57,7 @@ export async function registerPhoto(input: unknown): Promise<GalleryResult> {
   }
   const { data: last } = await db.from("gallery").select("sort").order("sort", { ascending: false }).limit(1);
   const { error: e } = await db.from("gallery").insert({ storage_path: args.path, alt: args.alt, sort: (last?.[0]?.sort ?? 0) + 1 });
+  if (e) await bucket.remove([args.path]); // no row points at it, so nothing could ever show or delete it
   return done(e);
 }
 

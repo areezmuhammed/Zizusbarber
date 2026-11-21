@@ -5,6 +5,8 @@
 import { NotOwnerError, requireOwner } from "@/lib/auth";
 import type { Status } from "@/lib/shop-data";
 import { parseBump, parseSetStatus } from "@/lib/status-form";
+import { updateTag } from "next/cache";
+import { TAGS } from "@/lib/shop-data";
 import { createClient } from "@/lib/supabase/server";
 
 type Result = { ok: true; status: Status } | { error: "forbidden" | "invalid" | "failed" };
@@ -19,7 +21,9 @@ async function isOwner() {
   }
 }
 
+// Called only after a successful write, so the next public render shows the new status (read-your-own-writes).
 async function current(db: Awaited<ReturnType<typeof createClient>>): Promise<Result> {
+  updateTag(TAGS.status);
   const { data, error } = await db.from("shop_status").select("state,in_shop,waiting,note").single();
   return error ? { error: "failed" } : { ok: true, status: data as Status };
 }
