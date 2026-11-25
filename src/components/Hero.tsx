@@ -1,18 +1,22 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { intlPhone } from "@/lib/format";
 import { shopConfig } from "../../shop.config";
 import { HeroVisual } from "./marketing/HeroVisual";
 import { StatusBadge, StatusBadgeFallback } from "./StatusBadge";
 
-export function Hero() {
+// basic: the £300 package demo — no live status, Call instead of online booking.
+export function Hero({ basic = false }: { basic?: boolean }) {
   return (
     <header className="relative isolate flex min-h-[85svh] flex-col overflow-hidden bg-band">
       <HeroVisual />
       <div className="relative z-10 flex min-h-[54px] items-center justify-between px-5 pt-4">
         <span className="font-heading text-lg">Zizu&apos;s</span>
-        <Suspense fallback={<StatusBadgeFallback />}>
-          <StatusBadge />
-        </Suspense>
+        {!basic && (
+          <Suspense fallback={<StatusBadgeFallback />}>
+            <StatusBadge />
+          </Suspense>
+        )}
       </div>
       <div className="relative z-10 mx-auto mt-auto w-full max-w-[1100px] px-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-16">
         <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-500">
@@ -24,10 +28,10 @@ export function Hero() {
           <p className="mt-4 max-w-[24ch] font-voice text-2xl leading-snug text-foreground/90">{shopConfig.tagline}</p>
           <div className="mt-6">
             <Link
-              href="/book"
+              href={basic ? `tel:+${intlPhone(shopConfig.phone)}` : "/book"}
               className="inline-flex min-h-12 items-center rounded-sm bg-primary px-7 text-sm tracking-[0.14em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              Book an appointment
+              {basic ? "Call to book" : "Book an appointment"}
             </Link>
           </div>
           <a
