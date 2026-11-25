@@ -177,3 +177,31 @@ test("add booking creates a booking through create_booking", async ({ page }) =>
   await form.getByRole("button", { name: "Save booking" }).click();
   await expect(form.getByRole("alert")).toContainText("overlaps another booking");
 });
+
+test("owner adds a booking to their calendar; strangers get nothing", async ({ page, browser }) => {
+  const CAL_DAY = "2031-06-10"; // BST: 10:30 London = 09:30Z
+  const id = await seed("Cal", CAL_DAY, "10:30");
+  await signIn(page, `/admin?date=${CAL_DAY}`);
+  const link = page.getByRole("link", { name: "Add Cal's booking to calendar" });
+  await expect(link).toHaveAttribute("href", `/admin/bookings/${id}/calendar.ics`);
+  const res = await page.request.get(`/admin/bookings/${id}/calendar.ics`);
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toContain("text/calendar");
+  expect(res.headers()["cache-control"]).toContain("no-store");
+  const ics = await res.text();
+  expect(ics).toContain(`UID:booking-${id}@zizusbarbers.com`);
+  expect(ics).toContain("DTSTART:20310610T093000Z");
+  expect(ics).toContain(`SUMMARY:Hair Cut: Cal ${TAG}`);
+
+  // non-owner: refused; signed out: sent to the login page
+  const other = await browser.newContext({ baseURL: "http://localhost:3107" });
+  const stranger = await other.newPage();
+  await stranger.goto(await makeUser(`calx${Math.random().toString(36).slice(2, 8)}`, false));
+  expect((await stranger.request.get(`/admin/bookings/${id}/calendar.ics`)).status()).toBe(403);
+  await other.close();
+  const anon = await browser.newContext({ baseURL: "http://localhost:3107" });
+  const r = await anon.request.get(`/admin/bookings/${id}/calendar.ics`, { maxRedirects: 0 });
+  expect([302, 303, 307]).toContain(r.status());
+  expect(r.headers()["location"]).toContain("/admin/login");
+  await anon.close();
+});

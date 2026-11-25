@@ -1,4 +1,4 @@
-import { Phone } from "lucide-react";
+import { CalendarPlus, Phone } from "lucide-react";
 import type { DayBooking } from "@/lib/admin-data";
 import { nationalPhone } from "@/lib/format";
 import { firstName, time } from "./ui";
@@ -49,14 +49,25 @@ export function BookingRow({ b, onOpen }: { b: DayBooking; onOpen: () => void })
         </span>
         <span className={`mt-1 rounded-sm px-2.5 py-1 text-xs font-medium ${CHIP[b.status]}`}>{STATUS_LABEL[b.status]}</span>
       </button>
-      <a
-        href={`tel:${b.phone}`}
-        aria-label={`Call ${first} on ${phone}`}
-        className="mb-2 ml-[5.5rem] inline-flex min-h-12 items-center gap-2 rounded-sm pr-3 text-sm tabular-nums text-primary focus-visible:outline-2 focus-visible:outline-primary"
-      >
-        <Phone aria-hidden className="size-4" />
-        {phone}
-      </a>
+      <div className="mb-2 ml-[5.5rem] flex flex-wrap gap-x-4">
+        <a
+          href={`tel:${b.phone}`}
+          aria-label={`Call ${first} on ${phone}`}
+          className="inline-flex min-h-12 items-center gap-2 rounded-sm pr-3 text-sm tabular-nums text-primary focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          <Phone aria-hidden className="size-4" />
+          {phone}
+        </a>
+        {/* After a time change, tapping again sends a newer copy of the same event */}
+        <a
+          href={`/admin/bookings/${b.id}/calendar.ics`}
+          aria-label={`Add ${first}'s booking to calendar`}
+          className="inline-flex min-h-12 items-center gap-2 rounded-sm pr-3 text-sm text-primary focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          <CalendarPlus aria-hidden className="size-4" />
+          Calendar
+        </a>
+      </div>
     </li>
   );
 }

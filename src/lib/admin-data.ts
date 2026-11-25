@@ -1,4 +1,5 @@
 import { requireOwner } from "./auth";
+import type { OwnerBooking } from "./ics";
 import { createClient } from "./supabase/server";
 import { addLondonDays, londonToUtc } from "./time";
 
@@ -31,6 +32,24 @@ export async function getDay(date: string): Promise<{ bookings: DayBooking[]; se
       service: (r.services as unknown as { name: string } | null)?.name ?? "",
     })),
     services: s.data,
+  };
+}
+
+// One booking (cancelled included, so the calendar can mark it) for the owner's calendar file. Owner only.
+export async function getBookingForCalendar(id: string): Promise<OwnerBooking | null> {
+  await requireOwner();
+  const db = await createClient();
+  const { data, error } = await db
+    .from("bookings")
+    .select("id,customer_name,phone,start_at,end_at,status,services(name)")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return {
+    id: data.id, name: data.customer_name, phone: data.phone, start: data.start_at, end: data.end_at,
+    service: (data.services as unknown as { name: string } | null)?.name ?? "Appointment",
+    cancelled: data.status === "cancelled",
   };
 }
 
