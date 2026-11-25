@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { startLive, toStatus } from "./live-status";
 
-const row = (n: number) => ({ state: "open", in_shop: n, waiting: 0, note: null });
+const row = (n: number) => ({ state: "open", in_shop: n, waiting: 0, note: null, manual_date: null });
 
 function harness() {
   let tick: (() => void) | null = null;

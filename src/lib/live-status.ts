@@ -11,6 +11,7 @@ export function toStatus(v: unknown): Status | null {
     in_shop: o.in_shop as number,
     waiting: o.waiting as number,
     note: typeof o.note === "string" && o.note ? o.note : null,
+    manual_date: typeof o.manual_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(o.manual_date) ? o.manual_date : null,
   };
 }
 

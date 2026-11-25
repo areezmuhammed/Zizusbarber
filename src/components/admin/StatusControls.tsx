@@ -3,11 +3,15 @@
 import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { bumpCount, saveStatus } from "@/app/admin/status";
-import type { Status } from "@/lib/shop-data";
+import type { Closure } from "@/lib/booking-form";
+import { effectiveStatus, londonDate } from "@/lib/open-now";
+import type { Hours, Status } from "@/lib/shop-data";
 import { MAX_NOTE } from "@/lib/status-form";
+import { useNow } from "@/lib/use-now";
 import { btn, field, panel } from "./ui";
 
 const STATES = [
+  ["auto", "Automatic"],
   ["open", "Open"],
   ["busy", "Busy"],
   ["closed", "Closed"],
@@ -20,8 +24,13 @@ const COUNTERS = [
 const step =
   "grid size-16 shrink-0 place-items-center rounded-sm border bg-background disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
-export function StatusControls({ initial }: { initial: Status }) {
+const LABEL = { open: "Open", busy: "Busy", closed: "Closed" } as const;
+
+export function StatusControls({ initial, hours, closures, now }: { initial: Status; hours: Hours[]; closures: Closure[]; now: number }) {
   const [s, setS] = useState(initial);
+  const at = useNow(now);
+  const auto = effectiveStatus({ ...s, manual_date: null }, hours, closures, at);
+  const chosen = s.manual_date === londonDate(at) ? s.state : "auto";
   const [note, setNote] = useState(initial.note ?? "");
   const [err, setErr] = useState("");
 
@@ -34,7 +43,7 @@ export function StatusControls({ initial }: { initial: Status }) {
   // buttons stay enabled while a request is pending: every tap is its own delta in SQL
   const bump = (key: "in_shop" | "waiting", delta: 1 | -1) => run(bumpCount({ field: key, delta }));
   // a state tap sends only the state, "Save note" only the note: neither can overwrite the other with a stale copy
-  const saveState = (state: Status["state"]) => run(saveStatus({ state }));
+  const saveState = (state: Status["state"] | "auto") => run(saveStatus({ state }));
 
   return (
     <div className="grid gap-6">
@@ -48,17 +57,22 @@ export function StatusControls({ initial }: { initial: Status }) {
           Changes show on your website straight away
         </p>
       </div>
-      <fieldset className="grid grid-cols-3 gap-2">
+      <fieldset className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <legend className="sr-only">Shop state</legend>
         {STATES.map(([v, label]) => (
           <label
             key={v}
-            className={`${btn} border has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${s.state === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}
+            className={`${btn} border has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${chosen === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}
           >
-            <input type="radio" name="state" value={v} checked={s.state === v} onChange={() => saveState(v)} className="sr-only" />
+            <input type="radio" name="state" value={v} checked={chosen === v} onChange={() => saveState(v)} className="sr-only" />
             {label}
           </label>
         ))}
+        <p data-testid="state-hint" className="col-span-full text-sm text-muted-foreground">
+          {chosen === "auto"
+            ? `Following your opening hours: ${LABEL[auto.state]} now${auto.next ? `, ${auto.next}` : ""}.`
+            : "Your choice shows until midnight, then the site goes back to your opening hours."}
+        </p>
       </fieldset>
       <div className="grid gap-3 sm:grid-cols-2">
         {COUNTERS.map(([key, label]) => (

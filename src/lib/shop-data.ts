@@ -8,7 +8,7 @@ export const TAGS = { services: "services", hours: "hours", closures: "closures"
 export type Service = { id: string; name: string; price_pence: number; duration_min: number };
 export type Hours = { weekday: number; open_local: string; close_local: string };
 export type Photo = { id: string; url: string; alt: string };
-export type Status = { state: "open" | "busy" | "closed"; in_shop: number; waiting: number; note: string | null };
+export type Status = { state: "open" | "busy" | "closed"; in_shop: number; waiting: number; note: string | null; manual_date: string | null };
 
 // Public data is read with the anon key and no cookies, so it can live in a shared cache.
 const db = () =>
@@ -64,7 +64,7 @@ export async function getStatus(): Promise<Status | null> {
   "use cache";
   cacheLife("seconds");
   cacheTag(TAGS.status);
-  return must(await db().from("shop_status").select("state,in_shop,waiting,note").maybeSingle());
+  return must(await db().from("shop_status").select("state,in_shop,waiting,note,manual_date").maybeSingle());
 }
 
 // Closures on or after a London date; `from` is the cache key, so the list rolls over daily.

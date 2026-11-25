@@ -17,10 +17,10 @@ export function parseBump(input: unknown) {
 export function parseSetStatus(input: unknown) {
   const o = obj(input);
   if (!o) return null;
-  const out: { state?: Status["state"]; note?: string | null } = {};
+  const out: { state?: Status["state"] | "auto"; note?: string | null } = {};
   if (o.state !== undefined) {
-    if (!STATES.includes(o.state as Status["state"])) return null;
-    out.state = o.state as Status["state"];
+    if (o.state !== "auto" && !STATES.includes(o.state as Status["state"])) return null;
+    out.state = o.state as Status["state"] | "auto";
   }
   if (o.note !== undefined) {
     if (typeof o.note !== "string") return null;

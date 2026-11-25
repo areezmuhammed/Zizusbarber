@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(14);
 
 insert into auth.users (id) values
   ('00000000-0000-0000-0000-0000000000c1'), ('00000000-0000-0000-0000-0000000000c2');
@@ -28,6 +28,12 @@ select is((select waiting from shop_status), 50, 'clamped at the cap 50');
 select is((select in_shop from shop_status), 0, 'other counter untouched');
 select throws_ok($$select bump_shop_status('state', 1)$$, 'P0001', 'invalid', 'unknown field refused');
 select throws_ok($$update shop_status set note = repeat('x', 81)$$, '23514', null, 'note over 80 chars rejected');
+
+select lives_ok($$update shop_status set manual_date = '2026-11-25'$$, 'owner can set the manual day');
+set local role anon;
+select is((select manual_date from shop_status), '2026-11-25'::date, 'anyone can read the manual day');
+update shop_status set manual_date = null; -- RLS: matches no rows for anon
+select is((select manual_date from shop_status), '2026-11-25'::date, 'anon cannot change the manual day');
 
 select * from finish();
 rollback;

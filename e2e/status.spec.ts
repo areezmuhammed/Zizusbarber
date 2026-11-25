@@ -1,16 +1,21 @@
 import { expect, test, type Browser } from "@playwright/test";
+import { DateTime } from "luxon";
+import { effectiveStatus } from "../src/lib/open-now";
 import { API, deleteUsers, H, makeUser } from "./helpers";
+
+const today = () => DateTime.now().setZone("Europe/London").toISODate()!;
 
 const setRow = async (patch: object) => {
   const r = await fetch(`${API}/rest/v1/shop_status?id=eq.true`, { method: "PATCH", headers: H, body: JSON.stringify(patch) });
   expect(r.ok).toBe(true);
 };
-const reset = () => setRow({ state: "open", in_shop: 0, waiting: 0, note: null });
+// a manual choice for today, so these tests do not depend on the time of day; automatic mode has its own test
+const reset = () => setRow({ state: "open", in_shop: 0, waiting: 0, note: null, manual_date: today() });
 const getRow = async () => ((await (await fetch(`${API}/rest/v1/shop_status?select=*`, { headers: H })).json()) as Record<string, unknown>[])[0];
 
 test.beforeEach(reset);
 test.afterAll(async () => {
-  await setRow({ state: "closed", in_shop: 0, waiting: 0, note: null });
+  await setRow({ state: "closed", in_shop: 0, waiting: 0, note: null, manual_date: null });
   await deleteUsers();
 });
 
@@ -93,6 +98,42 @@ test("the first public response after a status save contains the new status", as
   } finally {
     await owner.context().close();
   }
+});
+
+test("Automatic hands the badge back to opening hours; a choice is for today only", async ({ page, browser }) => {
+  const get = async (path: string) => (await fetch(`${API}/rest/v1/${path}`, { headers: H })).json();
+  const hours = await get("opening_hours?select=weekday,open_local,close_local");
+  const closures = await get(`closures?select=date,open_local,close_local&date=gte.${today()}`);
+  const expected = effectiveStatus({ state: "open", manual_date: null }, hours, closures, new Date());
+  const label = { open: "Open", busy: "Busy", closed: "Closed" }[expected.state];
+
+  // yesterday's choice no longer applies
+  await setRow({ state: "busy", manual_date: DateTime.now().setZone("Europe/London").minus({ days: 1 }).toISODate() });
+  await page.goto("/");
+  const badge = page.getByTestId("status-badge");
+  await expect(badge).toContainText(label);
+  await expect(badge).not.toContainText("Busy");
+  if (expected.next) await expect(badge).toContainText(expected.next);
+
+  const owner = await signedIn(browser, "statusauto", true);
+  await owner.goto("/admin/status");
+  await expect(owner.getByRole("radio", { name: "Automatic" })).toBeChecked();
+  await expect(owner.getByTestId("state-hint")).toContainText(`Following your opening hours: ${label} now`);
+
+  // a manual choice is stamped with today's London date and shows straight away
+  await owner.getByText("Busy", { exact: true }).click();
+  await expect(owner.getByRole("radio", { name: "Busy" })).toBeChecked();
+  await expect.poll(async () => (await getRow()).manual_date).toBe(today());
+  await expect(badge).toContainText("Busy", { timeout: 10_000 });
+  await expect(owner.getByTestId("state-hint")).toContainText("until midnight");
+
+  // back to automatic
+  await owner.getByText("Automatic", { exact: true }).click();
+  await expect(owner.getByRole("radio", { name: "Automatic" })).toBeChecked();
+  await expect.poll(async () => (await getRow()).manual_date).toBeNull();
+  await expect(badge).toContainText(label, { timeout: 10_000 });
+  await expect(badge).not.toContainText("Busy");
+  await owner.context().close();
 });
 
 // Real browser websocket to Realtime is closed by the test (page.routeWebSocket), so only polling can update the badge.

@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Closure } from "@/lib/booking-form";
 import { startLive } from "@/lib/live-status";
-import type { Status } from "@/lib/shop-data";
+import { effectiveStatus } from "@/lib/open-now";
+import type { Hours, Status } from "@/lib/shop-data";
+import { useNow } from "@/lib/use-now";
 import { createClient } from "@/lib/supabase/client";
 
 let channels = 0; // unique topic per subscribe: realtime-js returns an existing same-topic channel, even one still leaving
@@ -11,14 +14,18 @@ const LABEL = { open: "Open", busy: "Busy", closed: "Closed" } as const;
 const DOT = { open: "bg-primary", busy: "bg-[#D98E3A]", closed: "bg-muted-foreground" } as const;
 
 // Initial value comes from the (cached) server render; Realtime then keeps it current, with a 30s poll as fallback.
-export function LiveStatus({ initial }: { initial: Status }) {
-  const [s, setS] = useState(initial);
+// Open/closed follows opening hours unless the owner picked a state today (effectiveStatus).
+export function LiveStatus({ initial, hours, closures, now }: { initial: Status; hours: Hours[]; closures: Closure[]; now: number }) {
+  const [row, setS] = useState(initial);
+  const at = useNow(now);
+  const e = effectiveStatus(row, hours, closures, at);
+  const s = { ...row, state: e.state };
 
   useEffect(() => {
     const db = createClient();
     return startLive({
       onStatus: setS,
-      fetchRow: async () => (await db.from("shop_status").select("state,in_shop,waiting,note").maybeSingle()).data,
+      fetchRow: async () => (await db.from("shop_status").select("state,in_shop,waiting,note,manual_date").maybeSingle()).data,
       subscribe: (onRow, onState) => {
         const name = `shop_status_live_${++channels}`;
         const ch = db
@@ -42,6 +49,7 @@ export function LiveStatus({ initial }: { initial: Status }) {
           aria-hidden
         />
         {LABEL[s.state]}
+        {e.next && <span className="text-muted-foreground">· {e.next}</span>}
       </span>
       {s.state !== "closed" && (
         <span className="text-muted-foreground">
